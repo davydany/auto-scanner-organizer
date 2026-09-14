@@ -36,22 +36,25 @@ public struct LedgerDocument: Sendable, Equatable {
     public private(set) var rows: [LedgerRow]
     private let prefixLines: [String]
     private let suffixLines: [String]
+    private let lineEnding: String
 
-    private init(rows: [LedgerRow], prefixLines: [String], suffixLines: [String]) {
+    private init(rows: [LedgerRow], prefixLines: [String], suffixLines: [String], lineEnding: String) {
         self.rows = rows
         self.prefixLines = prefixLines
         self.suffixLines = suffixLines
+        self.lineEnding = lineEnding
     }
 
     public static func new(title: String, purpose: String, taxYear: Int?) -> LedgerDocument {
         var prefix = ["---", "type: ledger", "scan_purpose: \(YAML.string(purpose))"]
         if let taxYear { prefix.append("tax_year: \(taxYear)") }
         prefix += ["---", "", "# \(singleLine(title))", "", "Documents filed by Auto Scanner Organizer for this purpose.", ""]
-        return LedgerDocument(rows: [], prefixLines: prefix, suffixLines: [""])
+        return LedgerDocument(rows: [], prefixLines: prefix, suffixLines: [""], lineEnding: "\n")
     }
 
     public static func parse(_ markdown: String) throws -> LedgerDocument {
-        let lines = markdown.components(separatedBy: "\n")
+        let lineEnding = markdown.contains("\r\n") ? "\r\n" : "\n"
+        let lines = markdown.components(separatedBy: lineEnding)
         let starts = lines.indices.filter { lines[$0].trimmingCharacters(in: .whitespaces) == startMarker }
         let ends = lines.indices.filter { lines[$0].trimmingCharacters(in: .whitespaces) == endMarker }
         guard starts.count <= 1, ends.count <= 1 else { throw LedgerError.markersDuplicated }
@@ -65,7 +68,8 @@ public struct LedgerDocument: Sendable, Equatable {
             }
             rows.append(try parseRow(trimmed))
         }
-        return LedgerDocument(rows: rows, prefixLines: Array(lines[..<start]), suffixLines: Array(lines[(end + 1)...]))
+        return LedgerDocument(rows: rows, prefixLines: Array(lines[..<start]), suffixLines: Array(lines[(end + 1)...]),
+                              lineEnding: lineEnding)
     }
 
     public var total: Decimal {
@@ -90,9 +94,9 @@ public struct LedgerDocument: Sendable, Equatable {
         let currency = rows.first.map { " \($0.currency)" } ?? ""
         managed.append("| **Total** |  | **\(Money.format(total))\(currency)** |  |  |")
         managed.append(Self.endMarker)
-        let prefix = prefixLines.isEmpty ? "" : prefixLines.joined(separator: "\n") + "\n"
-        let suffix = suffixLines.isEmpty ? "" : "\n" + suffixLines.joined(separator: "\n")
-        return prefix + managed.joined(separator: "\n") + suffix
+        let prefix = prefixLines.isEmpty ? "" : prefixLines.joined(separator: lineEnding) + lineEnding
+        let suffix = suffixLines.isEmpty ? "" : lineEnding + suffixLines.joined(separator: lineEnding)
+        return prefix + managed.joined(separator: lineEnding) + suffix
     }
 
     private static func singleLine(_ text: String) -> String {

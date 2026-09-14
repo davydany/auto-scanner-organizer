@@ -103,6 +103,33 @@ struct LedgerTests {
         #expect(throws: LedgerError.mixedCurrency(existing: "USD", new: "EUR")) { try ledger.upsert(euros) }
     }
 
+    @Test func preservesCRLFLineEndings() throws {
+        let lfOriginal = """
+        # My receipts
+
+        Owner notes above the table.
+
+        <!-- auto-scanner:ledger:start -->
+        | Date | From | Amount | Category | Document |
+        |---|---|---|---|---|
+        | 2026-09-10 | Delta | 412.60 USD | travel | [[2026-09-10 Delta - Flight Receipt]] |
+        | **Total** |  | **412.60 USD** |  |  |
+        <!-- auto-scanner:ledger:end -->
+
+        Owner notes below the table.
+
+        """
+        let original = lfOriginal.replacingOccurrences(of: "\n", with: "\r\n")
+        var ledger = try LedgerDocument.parse(original)
+        #expect(ledger.rows == [delta])
+        #expect(ledger.render() == original)
+
+        try ledger.upsert(staples)
+        let updated = ledger.render()
+        #expect(updated.replacingOccurrences(of: "\r\n", with: "").contains("\n") == false)
+        #expect(try LedgerDocument.parse(updated).rows == [staples, delta])
+    }
+
     @Test func foldsLineBreaksInRenderedCells() throws {
         var ledger = LedgerDocument.new(title: "2026\nReceipts", purpose: "p", taxYear: nil)
         var row = staples
