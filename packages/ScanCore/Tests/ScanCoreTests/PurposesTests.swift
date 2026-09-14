@@ -21,7 +21,7 @@ struct PurposesTests {
 
     @Test func keepsEightMostRecentDistinctPurposes() async throws {
         let store = InMemoryPurposeStore()
-        for index in 1...9 {
+        for index in 1...10 {
             try await store.recordUse("Purpose \(index)")
         }
         try await store.recordUse("purpose 3")
