@@ -94,7 +94,7 @@ public struct Filer: Sendable {
         }
         let parent = try vault.resolve(request.destinationFolder)
         let folderURL = try destinationURL(folder: request.destinationFolder, newSubfolder: request.newSubfolder)
-        let ledgerTarget = try request.ledger.map(resolvedLedgerTarget)
+        let ledgerTarget = try request.ledger.map { try resolvedLedgerTarget(Self.masked($0)) }
         guard fileSystem.isDirectory(at: parent) else { throw FilingError.folderMissing(request.destinationFolder) }
         let createdFolder = !fileSystem.isDirectory(at: folderURL)
         if createdFolder {
@@ -106,12 +106,14 @@ public struct Filer: Sendable {
         }
 
         let existingNames = Set(try fileSystem.contentsOfDirectory(at: folderURL).map(\.lastPathComponent))
-        let analysis = request.note.analysis
+        // Spec §10.2: Claude's fields are masked once, here, before they reach the filename or the note.
+        let analysis = Self.masked(request.note.analysis)
         let baseName = FilenameBuilder.uniqueBaseName(
             FilenameBuilder.baseName(date: request.note.docDate, from: analysis.from, title: analysis.title),
             existingFileNames: existingNames
         )
         var note = request.note
+        note.analysis = analysis
         note.baseName = baseName
         if let ledgerTarget {
             // NoteWriter only emits the `ledger:` front-matter line when `scanPurpose` is set,
@@ -150,7 +152,7 @@ public struct Filer: Sendable {
 
     private func resolvedLedgerTarget(_ ledger: LedgerFiling) throws -> LedgerTarget {
         let folderURL = try vault.resolve(ledger.folder)
-        let noteName = FilenameBuilder.sanitize(ledger.noteName)
+        let noteName = Self.ledgerNoteBaseName(ledger.noteName)
         guard !noteName.isEmpty else { throw FilingError.invalidLedgerName(ledger.noteName) }
         return LedgerTarget(filing: ledger, folderURL: folderURL, noteName: noteName)
     }
@@ -174,7 +176,9 @@ public struct Filer: Sendable {
     }
 
     public func updateLedger(_ ledger: LedgerFiling, documentNoteName: String, docDate: CalendarDay, in folderURL: URL) throws -> URL {
-        let url = folderURL.appending(path: "\(FilenameBuilder.sanitize(ledger.noteName)).md")
+        // Masked here too, so a retry with the caller's unmasked filing reaches the same ledger note.
+        let ledger = Self.masked(ledger)
+        let url = folderURL.appending(path: "\(Self.ledgerNoteBaseName(ledger.noteName)).md")
         var document: LedgerDocument
         if fileSystem.fileExists(at: url) {
             // Spec §14: never read a note that a symlink smuggles in from outside the vault.
@@ -193,7 +197,7 @@ public struct Filer: Sendable {
     }
 
     public func ledgerIsValid(in folderURL: URL, noteName: String) -> Bool {
-        let url = folderURL.appending(path: "\(FilenameBuilder.sanitize(noteName)).md")
+        let url = folderURL.appending(path: "\(Self.ledgerNoteBaseName(noteName)).md")
         guard fileSystem.fileExists(at: url) else { return true }
         // Spec §14: a note symlinked in from outside the vault is never usable.
         guard vault.contains(url) else { return false }
@@ -207,7 +211,7 @@ public struct Filer: Sendable {
         // (e.g. `\r\n` vs `\n`, runs of blank lines); compare both sides after the same normalization
         // so duplicate detection isn't sensitive to whitespace styling.
         let normalizedTitle = Self.normalizedForComparison(title)
-        let normalizedFrom = from.map(Self.normalizedForComparison)
+        let normalizedFrom = Self.normalizedSender(from)
         for url in try fileSystem.contentsOfDirectory(at: folderURL) where url.pathExtension == "md" {
             // Spec §14: directory listings don't resolve symlinks, so skip anything that escapes the vault.
             guard vault.contains(url) else { continue }
@@ -215,7 +219,7 @@ public struct Filer: Sendable {
             let properties = FrontMatterReader.properties(of: text)
             guard properties["type"] != "ledger" else { continue }
             let noteTitle = properties["title"].map(Self.normalizedForComparison)
-            let noteFrom = properties["from"].map(Self.normalizedForComparison)
+            let noteFrom = Self.normalizedSender(properties["from"])
             if properties["doc_date"] == docDate.description, noteTitle == normalizedTitle, noteFrom == normalizedFrom {
                 return url.deletingPathExtension().lastPathComponent
             }
@@ -223,9 +227,51 @@ public struct Filer: Sendable {
         return nil
     }
 
-    /// Collapses every run of whitespace (spaces, tabs, `\r`, `\n`, `\r\n`) into a single space, trims both ends,
-    /// and lowercases, so duplicate matching isn't sensitive to line breaks or letter case.
+    /// Masks sensitive numbers (as the Filer does before writing), collapses every run of whitespace
+    /// (spaces, tabs, `\r`, `\n`, `\r\n`) into a single space, trims both ends, and lowercases, so duplicate
+    /// matching isn't sensitive to masking, line breaks, or letter case.
     private static func normalizedForComparison(_ text: String) -> String {
-        text.split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
+        SensitiveNumberMasker.mask(text).split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
+    }
+
+    /// A sender that is empty after normalization counts as no sender, as in NoteWriter and FilenameBuilder.
+    private static func normalizedSender(_ text: String?) -> String? {
+        guard let normalized = text.map(normalizedForComparison), !normalized.isEmpty else { return nil }
+        return normalized
+    }
+
+    /// The ledger note's file base name: masked, then stripped of filename-forbidden characters.
+    private static func ledgerNoteBaseName(_ noteName: String) -> String {
+        FilenameBuilder.sanitize(SensitiveNumberMasker.mask(noteName))
+    }
+
+    /// Masks the fields of Claude's analysis that the Filer writes outside NoteWriter's own masking
+    /// (summary, handwriting raw text, and page text are masked by NoteWriter).
+    private static func masked(_ analysis: DocumentAnalysis) -> DocumentAnalysis {
+        var analysis = analysis
+        analysis.title = SensitiveNumberMasker.mask(analysis.title)
+        analysis.from = analysis.from.map(SensitiveNumberMasker.mask)
+        analysis.handwritten = analysis.handwritten.map { annotation in
+            var annotation = annotation
+            annotation.paymentMethod = annotation.paymentMethod.map(SensitiveNumberMasker.mask)
+            annotation.checkNumber = annotation.checkNumber.map(SensitiveNumberMasker.mask)
+            return annotation
+        }
+        analysis.keyFacts.accountLast4 = analysis.keyFacts.accountLast4.flatMap(lastFourDigits)
+        return analysis
+    }
+
+    /// At most the last four ASCII digits; nil when there are none, so the optional property is left out.
+    private static func lastFourDigits(_ value: String) -> String? {
+        let digits = String(value.filter { $0.isASCII && $0.isNumber }.suffix(4))
+        return digits.isEmpty ? nil : digits
+    }
+
+    private static func masked(_ ledger: LedgerFiling) -> LedgerFiling {
+        var ledger = ledger
+        ledger.noteName = SensitiveNumberMasker.mask(ledger.noteName)
+        ledger.title = SensitiveNumberMasker.mask(ledger.title)
+        ledger.from = SensitiveNumberMasker.mask(ledger.from)
+        return ledger
     }
 }
