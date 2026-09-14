@@ -68,8 +68,8 @@ struct FilerTests {
                              note: note, ledger: ledger)
     }
 
-    func receiptLedger(amount: String) -> LedgerFiling {
-        LedgerFiling(noteName: "2026 Business Receipts", title: "2026 Business Receipts", purpose: "2026 taxes, business receipts",
+    func receiptLedger(amount: String, folder: String = "Personal/Finances") -> LedgerFiling {
+        LedgerFiling(noteName: "2026 Business Receipts", folder: folder, title: "2026 Business Receipts", purpose: "2026 taxes, business receipts",
                      taxYear: 2026, from: "Dominion Energy", amount: Decimal(string: amount)!, currency: "USD", category: .utilities)
     }
 
@@ -177,7 +177,7 @@ struct FilerTests {
             _ = try filer.file(request(ledger: receiptLedger(amount: "10.00")))
             Issue.record("Expected ledgerUpdateFailed")
         } catch let FilingError.ledgerUpdateFailed(ledgerError, result) {
-            #expect(ledgerError == .markersMissing)
+            #expect(ledgerError == .ledger(.markersMissing))
             #expect(FileManager.default.fileExists(atPath: result.pdfURL.path(percentEncoded: false)))
             #expect(FileManager.default.fileExists(atPath: result.noteURL.path(percentEncoded: false)))
         }
@@ -225,7 +225,7 @@ struct FilerTests {
             _ = try filer.file(request(folder: "Personal/Finances", ledger: receiptLedger(amount: "10.00")))
             Issue.record("Expected ledgerUpdateFailed")
         } catch let FilingError.ledgerUpdateFailed(ledgerError, _) {
-            #expect(ledgerError == .markersMissing)
+            #expect(ledgerError == .ledger(.markersMissing))
         }
         let afterBytes = try Data(contentsOf: outsideLedgerURL)
         #expect(beforeBytes == afterBytes)

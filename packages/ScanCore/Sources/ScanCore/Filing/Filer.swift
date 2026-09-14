@@ -2,6 +2,8 @@ import Foundation
 
 public struct LedgerFiling: Sendable, Equatable {
     public var noteName: String
+    /// Vault-relative folder of the purpose; the ledger note lives here (spec §10.4).
+    public var folder: String
     public var title: String
     public var purpose: String
     public var taxYear: Int?
@@ -10,9 +12,10 @@ public struct LedgerFiling: Sendable, Equatable {
     public var currency: String
     public var category: ExpenseCategory
 
-    public init(noteName: String, title: String, purpose: String, taxYear: Int?, from: String, amount: Decimal,
+    public init(noteName: String, folder: String, title: String, purpose: String, taxYear: Int?, from: String, amount: Decimal,
                 currency: String, category: ExpenseCategory) {
         self.noteName = noteName
+        self.folder = folder
         self.title = title
         self.purpose = purpose
         self.taxYear = taxYear
@@ -49,10 +52,20 @@ public struct FilingResult: Sendable, Equatable {
     public var ledgerURL: URL?
 }
 
+/// Why the ledger step failed after the PDF and note were written.
+public enum LedgerFailure: Error, Equatable, Sendable {
+    case ledger(LedgerError)
+    /// Any other error from the ledger step (e.g. a failed read or write), as `String(describing:)`.
+    case io(String)
+}
+
 public enum FilingError: Error, Equatable, Sendable {
     case invalidSubfolder(String)
     case folderMissing(String)
-    case ledgerUpdateFailed(LedgerError, result: FilingResult)
+    case hiddenFolder(String)
+    case invalidLedgerName(String)
+    /// The PDF and note were written; retry with `Filer.updateLedger` using `result`, never by re-running `file(_:)`.
+    case ledgerUpdateFailed(LedgerFailure, result: FilingResult)
 }
 
 /// Writes a document into the vault in spec §10.5 order: folder → PDF → note → ledger.
@@ -74,12 +87,22 @@ public struct Filer: Sendable {
     }
 
     public func file(_ request: FilingRequest) throws -> FilingResult {
+        // Everything that can reject the request is checked before the first write.
+        try Self.rejectHiddenComponents(of: request.destinationFolder)
+        if let ledger = request.ledger {
+            try Self.rejectHiddenComponents(of: ledger.folder)
+        }
         let parent = try vault.resolve(request.destinationFolder)
         let folderURL = try destinationURL(folder: request.destinationFolder, newSubfolder: request.newSubfolder)
+        let ledgerTarget = try request.ledger.map(resolvedLedgerTarget)
         guard fileSystem.isDirectory(at: parent) else { throw FilingError.folderMissing(request.destinationFolder) }
         let createdFolder = !fileSystem.isDirectory(at: folderURL)
         if createdFolder {
             try fileSystem.createDirectory(at: folderURL)
+        }
+        // Checked after creating the subfolder: the purpose's folder may be the subfolder just created.
+        if let ledgerTarget, !fileSystem.isDirectory(at: ledgerTarget.folderURL) {
+            throw FilingError.folderMissing(ledgerTarget.filing.folder)
         }
 
         let existingNames = Set(try fileSystem.contentsOfDirectory(at: folderURL).map(\.lastPathComponent))
@@ -90,11 +113,11 @@ public struct Filer: Sendable {
         )
         var note = request.note
         note.baseName = baseName
-        if let ledger = request.ledger {
+        if let ledgerTarget {
             // NoteWriter only emits the `ledger:` front-matter line when `scanPurpose` is set,
             // so filing under a ledger's purpose surfaces that purpose on the note as well.
-            note.scanPurpose = ledger.purpose
-            note.ledgerNoteName = FilenameBuilder.sanitize(ledger.noteName)
+            note.scanPurpose = ledgerTarget.filing.purpose
+            note.ledgerNoteName = ledgerTarget.noteName
         }
 
         let pdfURL = folderURL.appending(path: "\(baseName).pdf")
@@ -112,14 +135,42 @@ public struct Filer: Sendable {
 
         var result = FilingResult(baseName: baseName, folderURL: folderURL, pdfURL: pdfURL, noteURL: noteURL,
                                   createdFolder: createdFolder, ledgerURL: nil)
-        if let ledger = request.ledger {
-            do {
-                result.ledgerURL = try updateLedger(ledger, documentNoteName: baseName, docDate: note.docDate, in: folderURL)
-            } catch let error as LedgerError {
-                throw FilingError.ledgerUpdateFailed(error, result: result)
-            }
+        if let ledgerTarget {
+            result.ledgerURL = try updateLedgerStep(ledgerTarget, keeping: result, docDate: note.docDate)
         }
         return result
+    }
+
+    /// A ledger filing whose folder and note name passed validation.
+    private struct LedgerTarget {
+        let filing: LedgerFiling
+        let folderURL: URL
+        let noteName: String
+    }
+
+    private func resolvedLedgerTarget(_ ledger: LedgerFiling) throws -> LedgerTarget {
+        let folderURL = try vault.resolve(ledger.folder)
+        let noteName = FilenameBuilder.sanitize(ledger.noteName)
+        guard !noteName.isEmpty else { throw FilingError.invalidLedgerName(ledger.noteName) }
+        return LedgerTarget(filing: ledger, folderURL: folderURL, noteName: noteName)
+    }
+
+    /// Wraps every ledger-step error so the caller keeps the result of the document already written.
+    private func updateLedgerStep(_ target: LedgerTarget, keeping result: FilingResult, docDate: CalendarDay) throws -> URL {
+        do {
+            return try updateLedger(target.filing, documentNoteName: result.baseName, docDate: docDate, in: target.folderURL)
+        } catch let error as LedgerError {
+            throw FilingError.ledgerUpdateFailed(.ledger(error), result: result)
+        } catch {
+            throw FilingError.ledgerUpdateFailed(.io(String(describing: error)), result: result)
+        }
+    }
+
+    /// Dot-folders (`.obsidian`, `.trash`) are hidden from the owner, so nothing is filed into them.
+    /// `.` and `..` are path navigation and stay VaultPathGuard's concern.
+    private static func rejectHiddenComponents(of folder: String) throws {
+        let isHidden = folder.split(separator: "/").contains { $0.hasPrefix(".") && $0 != "." && $0 != ".." }
+        if isHidden { throw FilingError.hiddenFolder(folder) }
     }
 
     public func updateLedger(_ ledger: LedgerFiling, documentNoteName: String, docDate: CalendarDay, in folderURL: URL) throws -> URL {
