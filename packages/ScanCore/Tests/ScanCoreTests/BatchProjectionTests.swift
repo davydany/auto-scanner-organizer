@@ -94,4 +94,17 @@ struct BatchProjectionTests {
         let log = events([EventSpec(.scanStarted)]) + [JobEvent(batchID: "other", at: Date(), kind: .scanInterrupted)]
         #expect(BatchProjection.snapshot(batchID: batch, events: log).status == .scanning)
     }
+
+    @Test func toleratesDuplicateDocumentIDsInStackRead() {
+        let log = events([
+            EventSpec(.scanStarted),
+            EventSpec(.scanCompleted),
+            EventSpec(.ocrCompleted),
+            EventSpec(.stackRead, nil, [JobPayloadKey.documentIDs: "d1,d1,d2"]),
+        ])
+        let snapshot = BatchProjection.snapshot(batchID: batch, events: log)
+        #expect(snapshot.documentIDs == ["d1", "d2"])
+        #expect(snapshot.documents == ["d1": .pending, "d2": .pending])
+        #expect(snapshot.status == .processing)
+    }
 }

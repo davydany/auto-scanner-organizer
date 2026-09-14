@@ -47,7 +47,9 @@ public enum BatchProjection {
             case .ocrCompleted:
                 nextStep = .readStack
             case .stackRead:
-                documentIDs = (event.payload[JobPayloadKey.documentIDs] ?? "").split(separator: ",").map(String.init)
+                let allIDs = (event.payload[JobPayloadKey.documentIDs] ?? "").split(separator: ",").map(String.init)
+                var seen: Set<String> = []
+                documentIDs = allIDs.filter { seen.insert($0).inserted }
                 documents = Dictionary(uniqueKeysWithValues: documentIDs.map { ($0, DocumentStatus.pending) })
                 nextStep = .placeDocuments
             case .needsReview:
