@@ -31,6 +31,7 @@
   Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
   Claude-Session: https://claude.ai/code/session_01HHz61EB8Mx4vcbWNBXgKpj
   ```
+- **Review fix rounds** land as separate follow-up commits on top of the reviewed commits, never by amending or rewriting them. This supersedes "one per task" above: a task may span several commits.
 - **Makefile recipe lines** must be indented with a TAB character, not spaces.
 
 ## File Structure

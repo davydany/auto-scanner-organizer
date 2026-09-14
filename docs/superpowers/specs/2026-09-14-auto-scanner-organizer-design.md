@@ -415,3 +415,12 @@ The ADRs are in `docs/adrs/`, each dated 2026-09-14:
 - The API's per-request image limit, which sets the chunk size in §8.1.
 - Whether the Canon MF4700 driver exposes duplex and ICA-based feeder document detection. If it doesn't, the Both sides toggle is disabled with an explanation.
 - The actual staging folder path. The mockups use `~/Documents/Scans/Staging` as a sample; the owner picks the real one in Settings.
+
+## 20. Amendments (2026-09-14, Milestone 1 execution)
+
+- **§9:** rule 5 compares masked, whitespace-collapsed, lowercased titles and senders (an empty sender counts as none); a non-finite threshold counts as 1.0 and a non-finite confidence fails its rule. See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md).
+- **§10.1:** an empty sanitized title becomes `Untitled`; the 120-character cap cuts at a word boundary only if that keeps at least 60 characters, else hard-cuts; names differing only in letter case collide. See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md).
+- **§10.2:** the Filer masks Claude's title, sender, payment method, check number, and ledger name/title/sender before naming and rendering (also in the filename); `account_last4` keeps only its last 4 digits; dashless SSNs are masked only after a label; card numbers allow 0–3 separators. See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md).
+- **§10.4:** the ledger lives in the filing's purpose folder (`LedgerFiling.folder`, validated before any write); CRLF is preserved; currency is trimmed, uppercased, and must be three letters A–Z; rows sort by date then document name; ledger-step failures carry the filing result for retry. See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md).
+- **§10.5:** the PDF and note are create-only writes and a failed note write removes the new PDF, so the ledger is the only replacing write; dot-folder destinations and empty ledger names are rejected before any write; notes symlinked from outside the vault or not valid UTF-8 are skipped as duplicates and treated as invalid ledgers. See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md).
+- **§12:** ScanCore types persist only through `ScanCoreJSON` (snake_case, sorted keys, non-finite numbers as strings, explicit `batch_id`/`document_id` keys). See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md) and [ScanCoreJSON format](../../adrs/2026-09-14-scancorejson-persistence-format.md).
