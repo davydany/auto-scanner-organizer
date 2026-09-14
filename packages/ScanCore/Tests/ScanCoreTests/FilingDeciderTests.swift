@@ -105,4 +105,23 @@ struct FilingDeciderTests {
             Issue.record("Expected a single uncertainSplit(NaN) review reason")
         }
     }
+
+    @Test func reviewReasonsRoundTripThroughScanCoreJSON() throws {
+        let reasons: [ReviewReason] = [
+            .uncertainSplit(confidence: 0.42),
+            .uncertainPlacement(confidence: .infinity),
+            .splitOnChunkBoundary,
+            .possibleDuplicate(of: "2026-08-28 Dominion Energy - Electric Bill"),
+            .uncertainSplit(confidence: .nan),
+        ]
+        let data = try ScanCoreJSON.encoder().encode(reasons)
+        let decoded = try ScanCoreJSON.decoder().decode([ReviewReason].self, from: data)
+        #expect(decoded.count == 5)
+        #expect(Array(decoded.prefix(4)) == Array(reasons.prefix(4)))
+        if case .uncertainSplit(let value) = decoded[4] {
+            #expect(value.isNaN)
+        } else {
+            Issue.record("Expected uncertainSplit(NaN) after round trip")
+        }
+    }
 }
