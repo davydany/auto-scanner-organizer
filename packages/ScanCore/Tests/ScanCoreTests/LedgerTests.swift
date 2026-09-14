@@ -103,6 +103,35 @@ struct LedgerTests {
         #expect(throws: LedgerError.mixedCurrency(existing: "USD", new: "EUR")) { try ledger.upsert(euros) }
     }
 
+    @Test(arguments: ["US D", ""])
+    func rejectsInvalidCurrencyBeforeChangingRows(_ currency: String) throws {
+        var ledger = LedgerDocument.new(title: "T", purpose: "p", taxYear: nil)
+        try ledger.upsert(staples)
+        var invalid = staples
+        invalid.currency = currency
+        #expect(throws: LedgerError.invalidCurrency(currency)) { try ledger.upsert(invalid) }
+        #expect(ledger.rows == [staples])
+    }
+
+    @Test func storesTrimmedUppercaseCurrencyThatParsesBack() throws {
+        var ledger = LedgerDocument.new(title: "T", purpose: "p", taxYear: nil)
+        var row = staples
+        row.currency = " usd "
+        try ledger.upsert(row)
+        let rendered = ledger.render()
+        #expect(rendered.contains("| 84.17 USD |"))
+        #expect(try LedgerDocument.parse(rendered).rows.first?.currency == "USD")
+    }
+
+    @Test func treatsCurrencyCodesThatDifferOnlyInCaseAsTheSameCurrency() throws {
+        var ledger = LedgerDocument.new(title: "T", purpose: "p", taxYear: nil)
+        try ledger.upsert(staples)
+        var lowercase = delta
+        lowercase.currency = "usd"
+        try ledger.upsert(lowercase)
+        #expect(ledger.rows.map(\.currency) == ["USD", "USD"])
+    }
+
     @Test func preservesCRLFLineEndings() throws {
         let lfOriginal = """
         # My receipts

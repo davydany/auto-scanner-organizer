@@ -24,6 +24,8 @@ public enum LedgerError: Error, Equatable, Sendable {
     case markersDuplicated
     case unparseableRow(String)
     case mixedCurrency(existing: String, new: String)
+    /// Carries the currency as given; a valid code is three letters A–Z after trimming and uppercasing.
+    case invalidCurrency(String)
 }
 
 /// A purpose ledger note. Only the section between the markers is ever rewritten (spec §10.4).
@@ -77,7 +79,11 @@ public struct LedgerDocument: Sendable, Equatable {
     }
 
     public mutating func upsert(_ row: LedgerRow) throws {
-        if let conflicting = rows.first(where: { $0.documentNoteName != row.documentNoteName && $0.currency != row.currency }) {
+        var row = row
+        row.currency = try Self.normalizedCurrency(row.currency)
+        if let conflicting = rows.first(where: {
+            $0.documentNoteName != row.documentNoteName && $0.currency.uppercased() != row.currency
+        }) {
             throw LedgerError.mixedCurrency(existing: conflicting.currency, new: row.currency)
         }
         rows.removeAll { $0.documentNoteName == row.documentNoteName }
@@ -101,6 +107,15 @@ public struct LedgerDocument: Sendable, Equatable {
 
     private static func singleLine(_ text: String) -> String {
         text.split(whereSeparator: \.isNewline).joined(separator: " ")
+    }
+
+    /// Trims and uppercases; anything but exactly three letters A–Z would render a row `parse` rejects.
+    private static func normalizedCurrency(_ currency: String) throws -> String {
+        let code = currency.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard code.unicodeScalars.count == 3, code.unicodeScalars.allSatisfy({ ("A"..."Z").contains($0) }) else {
+            throw LedgerError.invalidCurrency(currency)
+        }
+        return code
     }
 
     private static func parseRow(_ line: String) throws -> LedgerRow {
