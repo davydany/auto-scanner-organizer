@@ -42,9 +42,9 @@ public enum NoteWriter {
         var sections: [String] = []
         let heading: String
         if let from = analysis.from, !from.isEmpty {
-            heading = "# \(analysis.title), \(from)"
+            heading = "# \(singleLine(analysis.title)), \(singleLine(from))"
         } else {
-            heading = "# \(analysis.title)"
+            heading = "# \(singleLine(analysis.title))"
         }
         sections.append("\(heading)\n\n![[\(note.baseName).pdf]]")
         sections.append("## Summary\n\n" + SensitiveNumberMasker.mask(analysis.summary))
@@ -56,7 +56,7 @@ public enum NoteWriter {
             sections.append("## Key facts\n\n" + facts.joined(separator: "\n"))
         }
         if !note.relatedNotes.isEmpty {
-            sections.append("## Related\n\n" + note.relatedNotes.map { "- [[\($0)]]" }.joined(separator: "\n"))
+            sections.append("## Related\n\n" + note.relatedNotes.map { "- [[\(singleLine($0))]]" }.joined(separator: "\n"))
         }
         var extracted = "## Extracted text"
         for (index, text) in note.pageTexts.enumerated() {
@@ -64,6 +64,10 @@ public enum NoteWriter {
         }
         sections.append(extracted)
         return sections.joined(separator: "\n\n") + "\n"
+    }
+
+    private static func singleLine(_ text: String) -> String {
+        text.split(whereSeparator: \.isNewline).joined(separator: " ")
     }
 
     private static func tags(_ tags: [String]) -> [String] {
@@ -89,11 +93,14 @@ public enum NoteWriter {
     }
 
     private static func handwrittenProperties(_ annotations: [HandwrittenAnnotation]) -> [String] {
+        guard let annotation = annotations.first(where: {
+            $0.paidOn != nil || $0.amountPaid != nil || $0.paymentMethod != nil || $0.checkNumber != nil
+        }) else { return [] }
         var lines: [String] = []
-        if let value = annotations.lazy.compactMap(\.paidOn).first { lines.append("paid_on: \(value)") }
-        if let value = annotations.lazy.compactMap(\.amountPaid).first { lines.append("amount_paid: \(Money.format(value))") }
-        if let value = annotations.lazy.compactMap(\.paymentMethod).first { lines.append("payment_method: \(YAML.string(value))") }
-        if let value = annotations.lazy.compactMap(\.checkNumber).first { lines.append("check_number: \(YAML.string(value))") }
+        if let value = annotation.paidOn { lines.append("paid_on: \(value)") }
+        if let value = annotation.amountPaid { lines.append("amount_paid: \(Money.format(value))") }
+        if let value = annotation.paymentMethod { lines.append("payment_method: \(YAML.string(value))") }
+        if let value = annotation.checkNumber { lines.append("check_number: \(YAML.string(value))") }
         return lines
     }
 
@@ -103,7 +110,7 @@ public enum NoteWriter {
         if let value = annotation.amountPaid { derived.append("amount_paid \(Money.format(value))") }
         if let value = annotation.paymentMethod { derived.append("payment_method \(value)") }
         if let value = annotation.checkNumber { derived.append("check_number \(value)") }
-        let quote = "- \"\(SensitiveNumberMasker.mask(annotation.rawText))\""
+        let quote = "- \"\(singleLine(SensitiveNumberMasker.mask(annotation.rawText)))\""
         return derived.isEmpty ? quote : "\(quote) → " + derived.joined(separator: ", ")
     }
 

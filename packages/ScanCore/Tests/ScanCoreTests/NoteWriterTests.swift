@@ -123,4 +123,41 @@ struct NoteWriterTests {
         #expect(Money.format(Decimal(180)) == "180.00")
         #expect(Money.format(Decimal(string: "1234.567")!) == "1234.57")
     }
+
+    @Test func foldsLineBreaksInSingleLineBodyFields() {
+        let analysis = DocumentAnalysis(
+            pages: [1], splitConfidence: 1, docType: .letter, title: "Electric\nBill", from: "Dominion\nEnergy",
+            summary: "x", handwritten: [HandwrittenAnnotation(page: 1, rawText: "Paid\n9/2")]
+        )
+        let note = NoteContent(
+            baseName: "b", analysis: analysis, docDate: CalendarDay("2026-01-01")!, docDateEstimated: false,
+            scannedAt: scannedAt, timeZone: newYork, filingConfidence: 0.8,
+            relatedNotes: ["Primary\nResidence"], pageTexts: ["LINE ONE\nLINE TWO"]
+        )
+        let output = NoteWriter.render(note)
+
+        #expect(output.contains("# Electric Bill, Dominion Energy\n\n"))
+        #expect(output.contains("- [[Primary Residence]]"))
+        #expect(output.contains("- \"Paid 9/2\""))
+        #expect(output.contains("LINE ONE\nLINE TWO"))
+    }
+
+    @Test func derivesHandwrittenPropertiesFromOneAnnotation() {
+        let analysis = DocumentAnalysis(
+            pages: [1], splitConfidence: 1, docType: .letter, title: "t", summary: "x",
+            handwritten: [
+                HandwrittenAnnotation(page: 1, rawText: "Paid 9/2", paidOn: CalendarDay("2026-09-02")),
+                HandwrittenAnnotation(page: 3, rawText: "ck #555 $20", amountPaid: Decimal(20), checkNumber: "555")
+            ]
+        )
+        let note = NoteContent(baseName: "b", analysis: analysis, docDate: CalendarDay("2026-01-01")!, docDateEstimated: false,
+                               scannedAt: scannedAt, timeZone: newYork, filingConfidence: 0.8, pageTexts: [])
+        let output = NoteWriter.render(note)
+
+        #expect(output.contains("paid_on: 2026-09-02\n"))
+        #expect(!output.contains("amount_paid:"))
+        #expect(!output.contains("check_number:"))
+        #expect(output.contains("- \"Paid 9/2\" → paid_on 2026-09-02"))
+        #expect(output.contains("- \"ck #555 $20\" → amount_paid 20.00, check_number 555"))
+    }
 }
