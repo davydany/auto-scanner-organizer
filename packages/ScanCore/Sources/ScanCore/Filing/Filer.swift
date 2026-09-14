@@ -150,21 +150,29 @@ public struct Filer: Sendable {
 
     public func findDuplicate(in folderURL: URL, docDate: CalendarDay, from: String?, title: String) throws -> String? {
         guard fileSystem.isDirectory(at: folderURL) else { return nil }
-        // NoteWriter folds embedded line breaks out of `title`/`from` before writing them to front
-        // matter, so duplicate detection must apply the same fold before comparing.
-        let normalizedTitle = NoteWriter.singleLine(title)
-        let normalizedFrom = from.map(NoteWriter.singleLine)
+        // Front matter may have folded whitespace differently depending on how it was written
+        // (e.g. `\r\n` vs `\n`, runs of blank lines); compare both sides after the same normalization
+        // so duplicate detection isn't sensitive to whitespace styling.
+        let normalizedTitle = Self.normalizedForComparison(title)
+        let normalizedFrom = from.map(Self.normalizedForComparison)
         for url in try fileSystem.contentsOfDirectory(at: folderURL) where url.pathExtension == "md" {
             // Spec §14: directory listings don't resolve symlinks, so skip anything that escapes the vault.
             guard vault.contains(url) else { continue }
             guard let text = String(data: try fileSystem.readData(at: url), encoding: .utf8) else { continue }
             let properties = FrontMatterReader.properties(of: text)
             guard properties["type"] != "ledger" else { continue }
-            if properties["doc_date"] == docDate.description, properties["title"] == normalizedTitle,
-               properties["from"] == normalizedFrom {
+            let noteTitle = properties["title"].map(Self.normalizedForComparison)
+            let noteFrom = properties["from"].map(Self.normalizedForComparison)
+            if properties["doc_date"] == docDate.description, noteTitle == normalizedTitle, noteFrom == normalizedFrom {
                 return url.deletingPathExtension().lastPathComponent
             }
         }
         return nil
+    }
+
+    /// Collapses every run of whitespace (spaces, tabs, `\r`, `\n`, `\r\n`) into a single space and
+    /// trims both ends, so duplicate matching isn't sensitive to how a title/sender was line-broken.
+    private static func normalizedForComparison(_ text: String) -> String {
+        text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
 }

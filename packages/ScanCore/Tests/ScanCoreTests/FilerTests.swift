@@ -265,4 +265,18 @@ struct FilerTests {
                                                  from: "Dominion\nEnergy", title: "Electric\nBill")
         #expect(duplicate == result.baseName)
     }
+
+    @Test func findsDuplicateAcrossLineBreakStylesAndSpacing() throws {
+        let vault = try makeVault()
+        defer { vault.remove() }
+        let filer = Filer(vaultRoot: vault.url)
+        let result = try filer.file(request(title: "Electric\r\n\r\nBill ", from: "\nDominion\nEnergy"))
+
+        #expect(try filer.findDuplicate(in: result.folderURL, docDate: CalendarDay("2026-08-28")!,
+                                         from: "\nDominion\nEnergy", title: "Electric\r\n\r\nBill ") == result.baseName)
+        #expect(try filer.findDuplicate(in: result.folderURL, docDate: CalendarDay("2026-08-28")!,
+                                         from: "Dominion Energy", title: "Electric Bill") == result.baseName)
+        #expect(try filer.findDuplicate(in: result.folderURL, docDate: CalendarDay("2026-08-28")!,
+                                         from: "Dominion Energy", title: "Electric Bills") == nil)
+    }
 }
