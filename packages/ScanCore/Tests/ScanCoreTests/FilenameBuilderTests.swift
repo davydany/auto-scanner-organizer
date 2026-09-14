@@ -36,4 +36,16 @@ struct FilenameBuilderTests {
         let existing: Set<String> = ["2026-08-28 A - B.pdf", "2026-08-28 A - B (2).md"]
         #expect(FilenameBuilder.uniqueBaseName("2026-08-28 A - B", existingFileNames: existing) == "2026-08-28 A - B (3)")
     }
+
+    @Test func usesUntitledWhenTitleSanitizesToEmpty() {
+        #expect(FilenameBuilder.baseName(date: day, from: "Sender", title: "///") == "2026-08-28 Sender - Untitled")
+        #expect(FilenameBuilder.baseName(date: day, from: nil, title: "") == "2026-08-28 Untitled")
+    }
+
+    @Test func hardCutsSingleWordLongerThanLimit() {
+        let longWord = String(repeating: "A", count: 200)
+        let result = FilenameBuilder.baseName(date: day, from: nil, title: longWord)
+        #expect(result.count == FilenameBuilder.maxLength)
+        #expect(result == "2026-08-28 " + String(repeating: "A", count: 109))
+    }
 }

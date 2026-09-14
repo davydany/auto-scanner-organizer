@@ -19,7 +19,7 @@ public enum FilenameBuilder {
     }
 
     public static func baseName(date: CalendarDay, from: String?, title: String) -> String {
-        let cleanTitle = sanitize(title)
+        let cleanTitle = sanitize(title).isEmpty ? "Untitled" : sanitize(title)
         let cleanFrom = from.map(sanitize) ?? ""
         let name = cleanFrom.isEmpty ? "\(date) \(cleanTitle)" : "\(date) \(cleanFrom) - \(cleanTitle)"
         return truncate(name)
@@ -40,7 +40,10 @@ public enum FilenameBuilder {
     private static func truncate(_ name: String) -> String {
         guard name.count > maxLength else { return name }
         let prefix = String(name.prefix(maxLength))
-        let atWordBoundary = prefix.lastIndex(of: " ").map { String(prefix[..<$0]) } ?? prefix
-        return atWordBoundary.trimmingCharacters(in: CharacterSet(charactersIn: " -"))
+        let trimSet = CharacterSet(charactersIn: " -")
+        if let space = prefix.lastIndex(of: " "), prefix.distance(from: prefix.startIndex, to: space) >= maxLength / 2 {
+            return String(prefix[..<space]).trimmingCharacters(in: trimSet)
+        }
+        return prefix.trimmingCharacters(in: trimSet)
     }
 }
