@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+  <style>
+    body { margin: 0; background: #E8ECF6; font-family: 'Plus Jakarta Sans', 'Outfit', -apple-system, system-ui, sans-serif; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    a { color: #2563EB; text-decoration: none; font-weight: 600; }
+    a:hover { color: #7C3AED; }
+    .win { position: relative; overflow: hidden; display: flex; flex-direction: column; background: linear-gradient(135deg, #EEF2FF 0%, #F0FFFE 40%, #FFF7ED 100%); }
+    .blob { position: absolute; border-radius: 9999px; filter: blur(70px); pointer-events: none; }
+    .g1 { background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 4px 24px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.6); box-sizing: border-box; }
+    .g2 { background: rgba(255,255,255,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 2px 12px rgba(15,23,42,0.05); box-sizing: border-box; }
+    .i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 9999px; font-size: 13px; font-weight: 600; white-space: nowrap; box-sizing: border-box; }
+    .ghost { background: rgba(255,255,255,0.7); color: #0F172A; border: 1px solid rgba(100,116,139,0.22); }
+    .mono { font-family: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace; }
+    .dot { width: 12px; height: 12px; border-radius: 9999px; }
+    .field { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; border-radius: 10px; background: rgba(255,255,255,0.75); border: 1px solid rgba(100,116,139,0.2); font-size: 14px; color: #0F172A; min-width: 0; box-sizing: border-box; }
+    .tab { width: 84px; height: 54px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 600; color: #475569; }
+    .tab.on { color: #1E3A8A; background: linear-gradient(135deg, rgba(59,130,246,0.14), rgba(139,92,246,0.14)); }
+    .ttl { font-size: 15px; font-weight: 600; }
+    .help { font-size: 13px; color: #64748B; line-height: 1.5; }
+    .srow { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: center; column-gap: 16px; min-height: 48px; border-top: 1px solid rgba(100,116,139,0.1); }
+    .slabel { font-size: 14px; font-weight: 500; color: #334155; }
+    .seg { display: inline-flex; padding: 3px; border-radius: 10px; background: rgba(100,116,139,0.12); gap: 2px; justify-self: start; }
+    .seg span { height: 30px; padding: 0 14px; border-radius: 8px; display: inline-flex; align-items: center; font-size: 13px; font-weight: 500; color: #475569; }
+    .seg span.on { background: #FFFFFF; color: #0F172A; font-weight: 600; box-shadow: 0 1px 3px rgba(15,23,42,0.12); }
+  </style>
+</helmet>
+<div class="win" style="width: 720px; height: 620px;">
+  <div class="blob" style="width: 320px; height: 320px; left: -60px; top: -80px; background: rgba(59,130,246,0.2);"></div>
+  <div class="blob" style="width: 300px; height: 300px; right: -80px; bottom: -60px; background: rgba(249,115,22,0.15);"></div>
+
+  <div class="g1" style="margin: 10px 10px 0; border-radius: 16px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; position: relative; z-index: 1;">
+    <div style="display: flex; align-items: center;">
+      <div style="display: flex; gap: 8px; width: 60px;"><span class="dot" style="background: #FF5F57;"></span><span class="dot" style="background: #FEBC2E;"></span><span class="dot" style="background: #28C840;"></span></div>
+      <span style="flex: 1; text-align: center; font-size: 13px; font-weight: 600; color: #334155;">Scanner</span>
+      <span style="width: 60px;"></span>
+    </div>
+    <div style="display: flex; justify-content: center; gap: 6px;">
+      <div class="tab"><svg class="i" viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>Folders</div>
+      <div class="tab"><svg class="i" viewBox="0 0 24 24" style="width: 20px; height: 20px;"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path></svg>AI</div>
+      <div class="tab on"><svg class="i" viewBox="0 0 24 24" style="width: 20px; height: 20px; color: #3B82F6;"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg>Scanner</div>
+    </div>
+  </div>
+
+  <div style="padding: 18px 24px 24px; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1;">
+    <div class="g2" style="border-radius: 20px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+      <span class="ttl">Default scanner</span>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <div class="field" style="flex: 1; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+            <svg class="i" viewBox="0 0 24 24" style="color: #2563EB;"><path d="M12 20h.01"></path><path d="M2 8.82a15 15 0 0 1 20 0"></path><path d="M5 12.859a10 10 0 0 1 14 0"></path><path d="M8.5 16.429a5 5 0 0 1 7 0"></path></svg>
+            <span style="font-weight: 600;">Canon MF4700 Series</span>
+            <span style="font-size: 12px; color: #64748B;">on your network</span>
+          </div>
+          <svg class="i" viewBox="0 0 24 24" style="color: #64748B;"><path d="m6 9 6 6 6-6"></path></svg>
+        </div>
+        <div class="btn ghost">Test scanner</div>
+      </div>
+      <span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #047857; font-weight: 500;"><svg class="i" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>Ready. Document feeder available.</span>
+    </div>
+
+    <div class="g2" style="border-radius: 20px; padding: 8px 20px 6px; display: flex; flex-direction: column;">
+      <div class="srow" style="border-top: none;">
+        <span class="slabel">Source</span>
+        <div class="seg"><span class="on">Document feeder</span><span>Flatbed</span></div>
+      </div>
+      <div class="srow">
+        <span class="slabel">Resolution</span>
+        <div class="field" style="width: 160px; height: 34px; justify-content: space-between;"><span style="font-size: 13px; font-weight: 500;">300 dpi</span><svg class="i" viewBox="0 0 24 24" style="color: #64748B;"><path d="m6 9 6 6 6-6"></path></svg></div>
+      </div>
+      <div class="srow">
+        <span class="slabel">Color</span>
+        <div class="seg"><span class="on">Color</span><span>Grayscale</span><span>Black &amp; white</span></div>
+      </div>
+      <div class="srow">
+        <span class="slabel">Both sides</span>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 40px; height: 24px; border-radius: 9999px; background: linear-gradient(135deg, #3B82F6, #8B5CF6); position: relative; box-shadow: 0 2px 8px rgba(59,130,246,0.3); flex-shrink: 0;"><div style="position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; border-radius: 9999px; background: #FFFFFF;"></div></div>
+          <span class="help">Scan both sides when the feeder supports it. Blank backs are dropped.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

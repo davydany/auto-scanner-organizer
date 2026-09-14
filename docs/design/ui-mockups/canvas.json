@@ -1,0 +1,12 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Home · History", "x": 0, "y": 0, "w": 1280, "h": 800 },
+    { "file": "PurposeSheet.dc.html", "title": "Auto Scan · purpose", "x": 1380, "y": 0, "w": 1280, "h": 800 },
+    { "file": "JobDetail.dc.html", "title": "Batch detail", "x": 2760, "y": 0, "w": 1280, "h": 800 },
+    { "file": "Review.dc.html", "title": "Needs review", "x": 0, "y": 940, "w": 1280, "h": 800 },
+    { "file": "SettingsFolders.dc.html", "title": "Settings · Folders", "x": 1380, "y": 940, "w": 720, "h": 620 },
+    { "file": "SettingsAI.dc.html", "title": "Settings · AI", "x": 2180, "y": 940, "w": 720, "h": 620 },
+    { "file": "SettingsScanner.dc.html", "title": "Settings · Scanner", "x": 2980, "y": 940, "w": 720, "h": 620 }
+  ],
+  "launch": { "view": "canvas" }
+}

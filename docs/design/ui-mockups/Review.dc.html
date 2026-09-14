@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Caveat:wght@500&amp;display=swap">
+  <style>
+    body { margin: 0; background: #E8ECF6; font-family: 'Plus Jakarta Sans', 'Outfit', -apple-system, system-ui, sans-serif; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    a { color: #2563EB; text-decoration: none; font-weight: 600; }
+    a:hover { color: #7C3AED; }
+    .win { position: relative; overflow: hidden; display: flex; background: linear-gradient(135deg, #EEF2FF 0%, #F0FFFE 40%, #FFF7ED 100%); }
+    .blob { position: absolute; border-radius: 9999px; filter: blur(70px); pointer-events: none; }
+    .g1 { background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 4px 24px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.6); box-sizing: border-box; }
+    .g2 { background: rgba(255,255,255,0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 2px 12px rgba(15,23,42,0.05); box-sizing: border-box; }
+    .i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .filed { background: rgba(16,185,129,0.12); color: #047857; }
+    .review { background: rgba(245,158,11,0.16); color: #B45309; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 9999px; font-size: 13px; font-weight: 600; white-space: nowrap; box-sizing: border-box; }
+    .primary { background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); color: #FFFFFF; box-shadow: 0 4px 16px rgba(59,130,246,0.35); }
+    .ghost { background: rgba(255,255,255,0.6); color: #0F172A; border: 1px solid rgba(100,116,139,0.22); }
+    .mono { font-family: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace; }
+    .cap { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B; }
+    .nav { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; font-size: 14px; font-weight: 500; color: #334155; position: relative; }
+    .nav.on { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); color: #1E3A8A; font-weight: 600; }
+    .nav.on::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: linear-gradient(180deg, #3B82F6, #8B5CF6); }
+    .badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .dot { width: 12px; height: 12px; border-radius: 9999px; }
+    .field { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border-radius: 10px; background: rgba(255,255,255,0.7); border: 1px solid rgba(100,116,139,0.2); font-size: 14px; color: #0F172A; min-width: 0; box-sizing: border-box; }
+    .label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B; }
+    .paper { width: 64px; height: 82px; background: #FFFFFF; border-radius: 4px; display: flex; flex-direction: column; gap: 4px; padding: 9px 7px; box-sizing: border-box; box-shadow: 0 1px 2px rgba(15,23,42,0.08), 0 4px 12px rgba(15,23,42,0.06); }
+    .ln { height: 3px; border-radius: 2px; background: #E2E8F0; }
+    .hand { font-family: 'Caveat', 'Bradley Hand', 'Segoe Print', cursive; color: #1E3A8A; font-size: 26px; line-height: 32px; }
+    .kv { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.6); border: 1px solid rgba(100,116,139,0.12); }
+    .opt { display: grid; grid-template-columns: 16px minmax(0, 1fr) 56px 32px; align-items: center; column-gap: 10px; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(100,116,139,0.16); box-sizing: border-box; }
+    .radio { width: 16px; height: 16px; border-radius: 9999px; border: 1.5px solid #94A3B8; box-sizing: border-box; }
+    .meter { height: 6px; border-radius: 9999px; background: rgba(100,116,139,0.15); overflow: hidden; }
+  </style>
+</helmet>
+<div class="win" style="width: 1280px; height: 800px;">
+  <div class="blob" style="width: 420px; height: 420px; left: 160px; top: -120px; background: rgba(59,130,246,0.22);"></div>
+  <div class="blob" style="width: 380px; height: 380px; right: -60px; bottom: -80px; background: rgba(249,115,22,0.18);"></div>
+  <div class="blob" style="width: 300px; height: 300px; left: 640px; top: 360px; background: rgba(139,92,246,0.14);"></div>
+
+  <aside class="g1" style="width: 232px; margin: 10px 0 10px 10px; border-radius: 20px; padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 1;">
+    <div style="display: flex; gap: 8px; padding: 4px 6px 20px;">
+      <span class="dot" style="background: #FF5F57;"></span><span class="dot" style="background: #FEBC2E;"></span><span class="dot" style="background: #28C840;"></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 6px 18px;">
+      <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #3B82F6, #8B5CF6); color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59,130,246,0.35);">
+        <svg class="i" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M7 12h10"></path></svg>
+      </div>
+      <div style="display: flex; flex-direction: column; line-height: 1.2;">
+        <span style="font-size: 14px; font-weight: 700;">Auto Scanner</span>
+        <span style="font-size: 12px; color: #64748B;">Organizer</span>
+      </div>
+    </div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>History</div>
+    <div class="nav on"><svg class="i" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Needs review<span class="badge" style="background: linear-gradient(135deg, #F59E0B, #F97316); color: #FFFFFF;">1</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>Failed<span class="badge" style="background: rgba(239,68,68,0.14); color: #B91C1C;">1</span></div>
+    <div class="cap" style="padding: 22px 10px 8px;">Locations</div>
+    <div class="nav" style="height: auto; padding: 8px 10px; align-items: flex-start;">
+      <svg class="i" viewBox="0 0 24 24" style="margin-top: 1px;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span>Staging</span><span class="mono" style="font-size: 11px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">~/Documents/Scans/Staging</span></div>
+    </div>
+    <div class="nav" style="height: auto; padding: 8px 10px; align-items: flex-start;">
+      <svg class="i" viewBox="0 0 24 24" style="margin-top: 1px;"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span>Vault</span><span class="mono" style="font-size: 11px; color: #64748B;">David's Vault</span></div>
+    </div>
+    <div style="flex: 1;"></div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>Settings</div>
+  </aside>
+
+  <main style="flex: 1; display: flex; flex-direction: column; padding: 10px; gap: 10px; min-width: 0; position: relative; z-index: 1;">
+    <header class="g1" style="height: 60px; border-radius: 16px; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 22px; flex-shrink: 0;">
+      <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.01em;">Review</span>
+      <span style="font-size: 14px; color: #64748B;">Today, 10:31 PM · page 3 of 3</span>
+      <div style="flex: 1;"></div>
+      <div class="btn ghost">Skip for now</div>
+    </header>
+
+    <section style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px;">
+      <div style="display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+        <div class="g1" style="border-radius: 20px; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+            <span style="font-size: 16px; font-weight: 600;">Pages in this batch</span>
+            <span style="font-size: 12px; color: #64748B;">Click between pages to split them</span>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px; opacity: 0.6;">
+                <div class="paper"><div class="ln" style="width: 55%; background: #CBD5E1;"></div><div class="ln"></div><div class="ln" style="width: 80%;"></div><div class="ln"></div><div class="ln" style="width: 45%;"></div></div>
+                <div style="width: 22px; height: 22px; border-radius: 9999px; border: 1.5px dashed #94A3B8; display: flex; align-items: center; justify-content: center; color: #94A3B8; box-sizing: border-box;"><svg class="i" viewBox="0 0 24 24" style="width: 12px; height: 12px;"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></div>
+                <div class="paper"><div class="ln"></div><div class="ln" style="width: 70%;"></div><div class="ln"></div><div class="ln" style="width: 55%;"></div></div>
+              </div>
+              <span class="chip filed" style="align-self: flex-start;">p. 1–2 · EOB · filed</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 34px;">
+              <div style="width: 28px; height: 28px; border-radius: 9999px; background: linear-gradient(135deg, #3B82F6, #8B5CF6); color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59,130,246,0.35);"><svg class="i" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><circle cx="6" cy="6" r="3"></circle><path d="M8.12 8.12 12 12"></path><path d="M20 4 8.12 15.88"></path><circle cx="6" cy="18" r="3"></circle><path d="M14.8 14.8 20 20"></path></svg></div>
+              <div style="width: 2px; height: 44px; border-radius: 2px; background: linear-gradient(180deg, #3B82F6, #8B5CF6);"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="paper" style="box-shadow: 0 0 0 2px #3B82F6, 0 6px 16px rgba(59,130,246,0.25); gap: 6px; padding-top: 12px;"><div class="ln" style="width: 70%; background: #BFDBFE;"></div><div class="ln" style="width: 45%; background: #BFDBFE;"></div><div class="ln" style="width: 80%; background: #BFDBFE; margin-top: 6px;"></div></div>
+              <span class="chip review" style="align-self: flex-start;">p. 3 · this one</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="g1" style="border-radius: 20px; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 20px;">
+          <div style="width: 330px; height: 420px; background-color: #FFFEF8; background-image: repeating-linear-gradient(180deg, transparent 0, transparent 31px, rgba(59,130,246,0.14) 31px, rgba(59,130,246,0.14) 32px); background-position: 0 14px; border-radius: 6px; box-shadow: 0 2px 4px rgba(15,23,42,0.08), 0 12px 32px rgba(15,23,42,0.1); padding: 20px 26px 20px 48px; box-sizing: border-box; position: relative; display: flex; flex-direction: column;">
+            <div style="position: absolute; left: 34px; top: 0; bottom: 0; width: 1px; background: rgba(239,68,68,0.3);"></div>
+            <span class="hand">Gutters cleaned — $180</span>
+            <span class="hand">pd 9/3 · ck #2217</span>
+            <span class="hand">&#160;</span>
+            <span class="hand">Call plumber re: water</span>
+            <span class="hand">heater (Thu)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="g1" style="border-radius: 20px; padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; min-height: 0;">
+        <div class="g2" style="border-radius: 14px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; background: rgba(254,243,199,0.55); border-color: rgba(245,158,11,0.25);">
+          <div style="width: 28px; height: 28px; border-radius: 9999px; background: rgba(245,158,11,0.18); color: #B45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg class="i" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 14px; font-weight: 600;">Claude isn't sure where this goes</span>
+            <span style="font-size: 13px; color: #475569; line-height: 1.5;">There's no sender or letterhead. The note mentions gutters and a water heater, which could fit Home Operations or Primary Residence.</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <span class="label">Title</span>
+            <div class="field"><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Gutter Cleaning Payment and Plumber Reminder</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <span class="label">Date</span>
+            <div class="field mono" style="font-size: 13px;">2026-09-03</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: -6px; color: #64748B;">
+          <svg class="i" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>
+          <span class="mono" style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">2026-09-03 Gutter Cleaning Payment and Plumber Reminder</span>
+          <span class="mono" style="font-size: 12px; white-space: nowrap; flex-shrink: 0;">.pdf + .md</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span class="label">Read from handwriting</span>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;">
+            <div class="kv"><span class="mono" style="font-size: 11px; color: #64748B;">paid_on</span><span style="font-size: 14px; font-weight: 600;">2026-09-03</span></div>
+            <div class="kv"><span class="mono" style="font-size: 11px; color: #64748B;">amount</span><span style="font-size: 14px; font-weight: 600;">$180.00</span></div>
+            <div class="kv"><span class="mono" style="font-size: 11px; color: #64748B;">method</span><span style="font-size: 14px; font-weight: 600;">Check</span></div>
+            <div class="kv"><span class="mono" style="font-size: 11px; color: #64748B;">check_number</span><span style="font-size: 14px; font-weight: 600;">2217</span></div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span class="label">Where should it go?</span>
+          <div class="opt" style="background: rgba(59,130,246,0.07); border-color: rgba(59,130,246,0.45);">
+            <div class="radio" style="border: 5px solid #3B82F6; background: #FFFFFF;"></div>
+            <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Personal / Home Operations</span>
+            <div class="meter"><div style="width: 42%; height: 6px; border-radius: 9999px; background: #F59E0B;"></div></div>
+            <span class="mono" style="font-size: 12px; color: #64748B; text-align: right;">0.42</span>
+          </div>
+          <div class="opt">
+            <div class="radio"></div>
+            <span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Personal / Home Operations / Equipment</span>
+            <div class="meter"><div style="width: 31%; height: 6px; border-radius: 9999px; background: #F59E0B;"></div></div>
+            <span class="mono" style="font-size: 12px; color: #64748B; text-align: right;">0.31</span>
+          </div>
+          <div class="opt">
+            <div class="radio"></div>
+            <span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Personal / Properties / Primary Residence</span>
+            <div class="meter"><div style="width: 27%; height: 6px; border-radius: 9999px; background: #F59E0B;"></div></div>
+            <span class="mono" style="font-size: 12px; color: #64748B; text-align: right;">0.27</span>
+          </div>
+          <div style="display: flex; gap: 8px; padding-top: 2px;">
+            <div class="btn ghost" style="height: 32px;"><svg class="i" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>Choose another folder…</div>
+            <div class="btn ghost" style="height: 32px;"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New subfolder…</div>
+          </div>
+        </div>
+
+        <div style="margin-top: auto; display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(100,116,139,0.12);">
+          <div class="btn primary" style="height: 40px; padding: 0 22px;">File to Home Operations</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

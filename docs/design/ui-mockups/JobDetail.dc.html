@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+  <style>
+    body { margin: 0; background: #E8ECF6; font-family: 'Plus Jakarta Sans', 'Outfit', -apple-system, system-ui, sans-serif; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    a { color: #2563EB; text-decoration: none; font-weight: 600; }
+    a:hover { color: #7C3AED; }
+    .win { position: relative; overflow: hidden; display: flex; background: linear-gradient(135deg, #EEF2FF 0%, #F0FFFE 40%, #FFF7ED 100%); }
+    .blob { position: absolute; border-radius: 9999px; filter: blur(70px); pointer-events: none; }
+    .g1 { background: rgba(255,255,255,0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 4px 24px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.6); box-sizing: border-box; }
+    .i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .filed { background: rgba(16,185,129,0.12); color: #047857; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 9999px; font-size: 13px; font-weight: 600; white-space: nowrap; box-sizing: border-box; }
+    .ghost { background: rgba(255,255,255,0.6); color: #0F172A; border: 1px solid rgba(100,116,139,0.22); }
+    .mono { font-family: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace; }
+    .cap { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #64748B; }
+    .nav { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; font-size: 14px; font-weight: 500; color: #334155; position: relative; }
+    .nav.on { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); color: #1E3A8A; font-weight: 600; }
+    .nav.on::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: linear-gradient(180deg, #3B82F6, #8B5CF6); }
+    .badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+    .dot { width: 12px; height: 12px; border-radius: 9999px; }
+    .paper { width: 60px; height: 78px; background: #FFFFFF; border-radius: 4px; display: flex; flex-direction: column; gap: 4px; padding: 9px 7px; box-sizing: border-box; flex-shrink: 0; }
+    .ln { height: 3px; border-radius: 2px; background: #E2E8F0; }
+    .grp { display: flex; flex-direction: column; gap: 10px; padding: 14px 0; border-top: 1px solid rgba(100,116,139,0.12); }
+    .ev { display: grid; grid-template-columns: 64px 24px minmax(0, 1fr); column-gap: 12px; }
+    .evt { font-size: 12px; color: #64748B; padding-top: 3px; }
+    .evrail { display: flex; flex-direction: column; align-items: center; }
+    .evdot { width: 24px; height: 24px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .evline { flex: 1; width: 2px; background: rgba(100,116,139,0.16); margin: 4px 0; }
+    .evbody { display: flex; flex-direction: column; gap: 3px; padding-bottom: 16px; min-width: 0; }
+    .evtitle { font-size: 14px; font-weight: 600; }
+    .evtext { font-size: 13px; color: #475569; line-height: 1.5; }
+    .evmeta { font-size: 12px; color: #64748B; overflow-wrap: anywhere; }
+  </style>
+</helmet>
+<div class="win" style="width: 1280px; height: 800px;">
+  <div class="blob" style="width: 420px; height: 420px; left: 160px; top: -120px; background: rgba(59,130,246,0.22);"></div>
+  <div class="blob" style="width: 380px; height: 380px; right: -60px; bottom: -80px; background: rgba(249,115,22,0.16);"></div>
+  <div class="blob" style="width: 300px; height: 300px; left: 640px; top: 360px; background: rgba(139,92,246,0.14);"></div>
+
+  <aside class="g1" style="width: 232px; margin: 10px 0 10px 10px; border-radius: 20px; padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; position: relative; z-index: 1;">
+    <div style="display: flex; gap: 8px; padding: 4px 6px 20px;">
+      <span class="dot" style="background: #FF5F57;"></span><span class="dot" style="background: #FEBC2E;"></span><span class="dot" style="background: #28C840;"></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 6px 18px;">
+      <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #3B82F6, #8B5CF6); color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59,130,246,0.35);">
+        <svg class="i" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M7 12h10"></path></svg>
+      </div>
+      <div style="display: flex; flex-direction: column; line-height: 1.2;">
+        <span style="font-size: 14px; font-weight: 700;">Auto Scanner</span>
+        <span style="font-size: 12px; color: #64748B;">Organizer</span>
+      </div>
+    </div>
+    <div class="nav on"><svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>History</div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Needs review<span class="badge" style="background: linear-gradient(135deg, #F59E0B, #F97316); color: #FFFFFF;">1</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>Failed<span class="badge" style="background: rgba(239,68,68,0.14); color: #B91C1C;">1</span></div>
+    <div class="cap" style="padding: 22px 10px 8px;">Locations</div>
+    <div class="nav" style="height: auto; padding: 8px 10px; align-items: flex-start;">
+      <svg class="i" viewBox="0 0 24 24" style="margin-top: 1px;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span>Staging</span><span class="mono" style="font-size: 11px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">~/Documents/Scans/Staging</span></div>
+    </div>
+    <div class="nav" style="height: auto; padding: 8px 10px; align-items: flex-start;">
+      <svg class="i" viewBox="0 0 24 24" style="margin-top: 1px;"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;"><span>Vault</span><span class="mono" style="font-size: 11px; color: #64748B;">David's Vault</span></div>
+    </div>
+    <div style="flex: 1;"></div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>Settings</div>
+  </aside>
+
+  <main style="flex: 1; display: flex; flex-direction: column; padding: 10px; gap: 10px; min-width: 0; position: relative; z-index: 1;">
+    <header class="g1" style="height: 60px; border-radius: 16px; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 14px; flex-shrink: 0;">
+      <div class="btn ghost" style="width: 36px; padding: 0;"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></div>
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 14px; color: #64748B;">
+        <span>History</span>
+        <svg class="i" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="m9 18 6-6-6-6"></path></svg>
+        <span style="font-size: 18px; font-weight: 700; color: #0F172A;">Today, 10:42 PM</span>
+      </div>
+      <span class="chip filed" style="margin-left: 6px;">Filed · 3 documents</span>
+      <div style="flex: 1;"></div>
+      <div class="btn ghost"><svg class="i" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>Show raw scan</div>
+    </header>
+
+    <section style="flex: 1; min-height: 0; display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 10px;">
+      <div class="g1" style="border-radius: 20px; padding: 18px 20px 6px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 12px;">
+          <span style="font-size: 18px; font-weight: 600;">Pages</span>
+          <span style="font-size: 13px; color: #64748B;">7 pages · 3 documents</span>
+        </div>
+
+        <div class="grp">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 9999px; background: #3B82F6;"></span>
+            <span style="font-size: 14px; font-weight: 600;">Dominion Energy bill</span>
+            <span class="mono" style="font-size: 11px; color: #64748B; margin-left: auto;">p. 1–2</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div class="paper" style="box-shadow: 0 0 0 2px rgba(59,130,246,0.55), 0 4px 12px rgba(15,23,42,0.06);"><div class="ln" style="width: 55%; background: #CBD5E1;"></div><div class="ln"></div><div class="ln" style="width: 80%;"></div><div class="ln"></div><div class="ln" style="width: 40%;"></div><div class="ln" style="width: 70%; margin-top: 6px;"></div></div>
+            <div class="paper" style="box-shadow: 0 0 0 2px rgba(59,130,246,0.55), 0 4px 12px rgba(15,23,42,0.06);"><div class="ln"></div><div class="ln" style="width: 75%;"></div><div class="ln"></div><div class="ln" style="width: 60%;"></div></div>
+          </div>
+          <div style="display: flex; gap: 16px; font-size: 13px;"><a>Open note</a><a>Show in Finder</a></div>
+        </div>
+
+        <div class="grp">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 9999px; background: #8B5CF6;"></span>
+            <span style="font-size: 14px; font-weight: 600;">Loudoun County tax notice</span>
+            <span class="mono" style="font-size: 11px; color: #64748B; margin-left: auto;">p. 3</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div class="paper" style="box-shadow: 0 0 0 2px rgba(139,92,246,0.55), 0 4px 12px rgba(15,23,42,0.06);"><div class="ln" style="width: 45%; background: #CBD5E1;"></div><div class="ln"></div><div class="ln"></div><div class="ln" style="width: 65%;"></div><div class="ln" style="width: 85%;"></div></div>
+          </div>
+          <div style="display: flex; gap: 16px; font-size: 13px;"><a>Open note</a><a>Show in Finder</a></div>
+        </div>
+
+        <div class="grp">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 9999px; background: #F97316;"></span>
+            <span style="font-size: 14px; font-weight: 600;">State Farm policy renewal</span>
+            <span class="mono" style="font-size: 11px; color: #64748B; margin-left: auto;">p. 4–7</span>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div class="paper" style="box-shadow: 0 0 0 2px rgba(249,115,22,0.5), 0 4px 12px rgba(15,23,42,0.06);"><div class="ln" style="width: 60%; background: #CBD5E1;"></div><div class="ln"></div><div class="ln" style="width: 80%;"></div><div class="ln"></div></div>
+            <div class="paper" style="box-shadow: 0 0 0 2px rgba(249,115,22,0.5), 0 4px 12px rgba(15,23,42,0.06);"><div class="ln"></div><div class="ln"></div><div class="ln" style="width: 70%;"></div><div class="ln"></div><div class="ln" style="width: 50%;"></div></div>
+            <div class="paper" style="box-shadow: 0 0 0 2px rgba(249,115,22,0.5), 0 4px 12px rgba(15,23,42,0.06);"><div class="ln"></div><div class="ln" style="width: 85%;"></div><div class="ln"></div><div class="ln" style="width: 40%;"></div></div>
+            <div class="paper" style="box-shadow: 0 0 0 2px rgba(249,115,22,0.5), 0 4px 12px rgba(15,23,42,0.06);"><div class="ln"></div><div class="ln" style="width: 60%;"></div></div>
+          </div>
+          <div style="display: flex; gap: 16px; font-size: 13px;"><a>Open note</a><a>Show in Finder</a></div>
+        </div>
+      </div>
+
+      <div class="g1" style="border-radius: 20px; padding: 18px 24px 4px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 18px;">
+          <span style="font-size: 18px; font-weight: 600;">What happened</span>
+          <span style="font-size: 13px; color: #64748B;">Took 1 min 12 s</span>
+        </div>
+
+        <div class="ev">
+          <span class="mono evt">10:42:03</span>
+          <div class="evrail"><div class="evdot" style="background: rgba(59,130,246,0.12); color: #2563EB;"><svg class="i" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M7 12h10"></path></svg></div><div class="evline"></div></div>
+          <div class="evbody">
+            <span class="evtitle">Scanned 7 pages</span>
+            <span class="evtext">Canon MF4700 Series · Document feeder · 300 dpi · Color</span>
+            <span class="mono evmeta">~/Documents/Scans/Staging/2026-09-13-224203/</span>
+          </div>
+        </div>
+
+        <div class="ev">
+          <span class="mono evt">10:42:41</span>
+          <div class="evrail"><div class="evdot" style="background: rgba(59,130,246,0.12); color: #2563EB;"><svg class="i" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M7 8h8"></path><path d="M7 12h10"></path><path d="M7 16h6"></path></svg></div><div class="evline"></div></div>
+          <div class="evbody">
+            <span class="evtitle">Recognized text on 7 of 7 pages</span>
+            <span class="evtext">Apple Vision, on this Mac</span>
+          </div>
+        </div>
+
+        <div class="ev">
+          <span class="mono evt">10:42:58</span>
+          <div class="evrail"><div class="evdot" style="background: rgba(139,92,246,0.14); color: #7C3AED;"><svg class="i" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path></svg></div><div class="evline"></div></div>
+          <div class="evbody">
+            <span class="evtitle">Claude Sonnet 5 read the stack</span>
+            <span class="evtext">Found 3 documents and a handwritten annotation (“Paid 9/2” on page 1).</span>
+            <span class="mono evmeta">38,240 tokens in · 2,410 out · $0.10</span>
+          </div>
+        </div>
+
+        <div class="ev">
+          <span class="mono evt">10:43:05</span>
+          <div class="evrail"><div class="evdot" style="background: rgba(16,185,129,0.14); color: #059669;"><svg class="i" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg></div><div class="evline"></div></div>
+          <div class="evbody">
+            <span class="evtitle">Filed Dominion Energy bill</span>
+            <span class="evtext">Read 4 notes in Primary Residence, created the Utilities folder, and wrote the PDF and note. Confidence 0.91.</span>
+          </div>
+        </div>
+
+        <div class="ev">
+          <span class="mono evt">10:43:09</span>
+          <div class="evrail"><div class="evdot" style="background: rgba(16,185,129,0.14); color: #059669;"><svg class="i" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg></div><div class="evline"></div></div>
+          <div class="evbody">
+            <span class="evtitle">Filed Loudoun County tax notice</span>
+            <span class="evtext">Personal / Finances / Taxes / 2026. Confidence 0.88.</span>
+          </div>
+        </div>
+
+        <div class="ev">
+          <span class="mono evt">10:43:14</span>
+          <div class="evrail"><div class="evdot" style="background: rgba(16,185,129,0.14); color: #059669;"><svg class="i" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg></div><div class="evline"></div></div>
+          <div class="evbody">
+            <span class="evtitle">Filed State Farm policy renewal</span>
+            <span class="evtext">Personal / Properties / Primary Residence / Insurance. Confidence 0.86.</span>
+          </div>
+        </div>
+
+        <div class="ev">
+          <span class="mono evt">10:43:15</span>
+          <div class="evrail"><div class="evdot" style="background: rgba(100,116,139,0.12); color: #475569;"><svg class="i" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></div></div>
+          <div class="evbody">
+            <span class="evtitle">Moved the raw scan to _done</span>
+            <span class="mono evmeta">~/Documents/Scans/Staging/_done/2026-09-13-224203/</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>
