@@ -66,7 +66,7 @@ public enum NoteWriter {
         return sections.joined(separator: "\n\n") + "\n"
     }
 
-    private static func singleLine(_ text: String) -> String {
+    static func singleLine(_ text: String) -> String {
         text.split(whereSeparator: \.isNewline).joined(separator: " ")
     }
 

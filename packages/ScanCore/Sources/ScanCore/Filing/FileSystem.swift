@@ -11,6 +11,7 @@ public protocol FileSystem: Sendable {
     /// Writes to a temporary file on the same volume, then renames it into place.
     func writeAtomically(_ data: Data, to url: URL) throws
     func moveItem(at source: URL, to destination: URL) throws
+    func removeItem(at url: URL) throws
 }
 
 public struct LocalFileSystem: FileSystem {
@@ -45,5 +46,9 @@ public struct LocalFileSystem: FileSystem {
 
     public func moveItem(at source: URL, to destination: URL) throws {
         try FileManager.default.moveItem(at: source, to: destination)
+    }
+
+    public func removeItem(at url: URL) throws {
+        try FileManager.default.removeItem(at: url)
     }
 }

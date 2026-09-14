@@ -2,6 +2,26 @@ import Foundation
 import Testing
 @testable import ScanCore
 
+/// Forwards to a real `LocalFileSystem`, except that writing a `.md` file always fails —
+/// used to simulate a note-write failure after the PDF has already been written.
+private struct FailingNoteWritesFileSystem: FileSystem {
+    private let inner = LocalFileSystem()
+
+    func fileExists(at url: URL) -> Bool { inner.fileExists(at: url) }
+    func isDirectory(at url: URL) -> Bool { inner.isDirectory(at: url) }
+    func contentsOfDirectory(at url: URL) throws -> [URL] { try inner.contentsOfDirectory(at: url) }
+    func createDirectory(at url: URL) throws { try inner.createDirectory(at: url) }
+    func readData(at url: URL) throws -> Data { try inner.readData(at: url) }
+
+    func writeAtomically(_ data: Data, to url: URL) throws {
+        if url.pathExtension == "md" { throw CocoaError(.fileWriteNoPermission) }
+        try inner.writeAtomically(data, to: url)
+    }
+
+    func moveItem(at source: URL, to destination: URL) throws { try inner.moveItem(at: source, to: destination) }
+    func removeItem(at url: URL) throws { try inner.removeItem(at: url) }
+}
+
 struct FilerTests {
     let newYork = TimeZone(identifier: "America/New_York")!
 
@@ -219,5 +239,30 @@ struct FilerTests {
 
         try invalidUTF8.write(to: folder.appending(path: "2026 Business Receipts.md"))
         #expect(!filer.ledgerIsValid(in: folder, noteName: "2026 Business Receipts"))
+    }
+
+    @Test func removesOrphanPDFWhenNoteWriteFails() throws {
+        let vault = try makeVault()
+        defer { vault.remove() }
+        let filer = Filer(vaultRoot: vault.url, fileSystem: FailingNoteWritesFileSystem())
+
+        #expect(throws: CocoaError.self) {
+            _ = try filer.file(request())
+        }
+
+        let financesFolder = vault.url.appending(path: "Personal/Finances")
+        let remaining = try FileManager.default.contentsOfDirectory(atPath: financesFolder.path(percentEncoded: false))
+        #expect(!remaining.contains { $0.hasSuffix(".pdf") })
+    }
+
+    @Test func findsDuplicateWhenTitleAndSenderContainLineBreaks() throws {
+        let vault = try makeVault()
+        defer { vault.remove() }
+        let filer = Filer(vaultRoot: vault.url)
+        let result = try filer.file(request(title: "Electric\nBill", from: "Dominion\nEnergy"))
+
+        let duplicate = try filer.findDuplicate(in: result.folderURL, docDate: CalendarDay("2026-08-28")!,
+                                                 from: "Dominion\nEnergy", title: "Electric\nBill")
+        #expect(duplicate == result.baseName)
     }
 }

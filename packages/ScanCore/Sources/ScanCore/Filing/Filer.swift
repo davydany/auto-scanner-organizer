@@ -100,7 +100,13 @@ public struct Filer: Sendable {
         let pdfURL = folderURL.appending(path: "\(baseName).pdf")
         let noteURL = folderURL.appending(path: "\(baseName).md")
         try fileSystem.writeAtomically(request.pdfData, to: pdfURL)
-        try fileSystem.writeAtomically(Data(NoteWriter.render(note).utf8), to: noteURL)
+        do {
+            try fileSystem.writeAtomically(Data(NoteWriter.render(note).utf8), to: noteURL)
+        } catch {
+            // Spec §13: a vault write failure must not leave a partial file behind.
+            try? fileSystem.removeItem(at: pdfURL)
+            throw error
+        }
 
         var result = FilingResult(baseName: baseName, folderURL: folderURL, pdfURL: pdfURL, noteURL: noteURL,
                                   createdFolder: createdFolder, ledgerURL: nil)
@@ -144,13 +150,18 @@ public struct Filer: Sendable {
 
     public func findDuplicate(in folderURL: URL, docDate: CalendarDay, from: String?, title: String) throws -> String? {
         guard fileSystem.isDirectory(at: folderURL) else { return nil }
+        // NoteWriter folds embedded line breaks out of `title`/`from` before writing them to front
+        // matter, so duplicate detection must apply the same fold before comparing.
+        let normalizedTitle = NoteWriter.singleLine(title)
+        let normalizedFrom = from.map(NoteWriter.singleLine)
         for url in try fileSystem.contentsOfDirectory(at: folderURL) where url.pathExtension == "md" {
             // Spec §14: directory listings don't resolve symlinks, so skip anything that escapes the vault.
             guard vault.contains(url) else { continue }
             guard let text = String(data: try fileSystem.readData(at: url), encoding: .utf8) else { continue }
             let properties = FrontMatterReader.properties(of: text)
             guard properties["type"] != "ledger" else { continue }
-            if properties["doc_date"] == docDate.description, properties["title"] == title, properties["from"] == from {
+            if properties["doc_date"] == docDate.description, properties["title"] == normalizedTitle,
+               properties["from"] == normalizedFrom {
                 return url.deletingPathExtension().lastPathComponent
             }
         }

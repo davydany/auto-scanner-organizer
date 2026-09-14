@@ -32,4 +32,14 @@ struct LocalFileSystemTests {
         #expect(!fileSystem.fileExists(at: source))
         #expect(fileSystem.isDirectory(at: destination))
     }
+
+    @Test func removesItems() throws {
+        let temp = try TemporaryDirectory()
+        defer { temp.remove() }
+        let file = temp.url.appending(path: "note.md")
+        try fileSystem.writeAtomically(Data("hello".utf8), to: file)
+        #expect(fileSystem.fileExists(at: file))
+        try fileSystem.removeItem(at: file)
+        #expect(!fileSystem.fileExists(at: file))
+    }
 }
