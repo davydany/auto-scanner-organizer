@@ -30,12 +30,16 @@ public struct PDFPageInput: @unchecked Sendable {
 public enum SearchablePDFError: Error, Equatable, Sendable {
     case noPages
     case contextCreationFailed
+    case invalidDPI(Double)
 }
 
 /// Builds a PDF whose pages are the scanned images with an invisible, selectable text layer (spec §10.3).
 public enum SearchablePDFBuilder {
     public static func build(pages: [PDFPageInput]) throws -> Data {
         guard !pages.isEmpty else { throw SearchablePDFError.noPages }
+        for page in pages {
+            guard page.dpi.isFinite && page.dpi > 0 else { throw SearchablePDFError.invalidDPI(page.dpi) }
+        }
         let data = NSMutableData()
         guard let consumer = CGDataConsumer(data: data as CFMutableData) else { throw SearchablePDFError.contextCreationFailed }
         var defaultBox = CGRect(x: 0, y: 0, width: 612, height: 792)
@@ -49,6 +53,7 @@ public enum SearchablePDFBuilder {
         return data as Data
     }
 
+    /// Returns the size in PDF points (1/72 inch). Requires `page.dpi` to be finite and positive.
     public static func pageSize(for page: PDFPageInput) -> CGSize {
         CGSize(width: Double(page.image.width) * 72 / page.dpi, height: Double(page.image.height) * 72 / page.dpi)
     }

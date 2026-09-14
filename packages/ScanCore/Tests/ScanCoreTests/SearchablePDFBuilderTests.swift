@@ -51,4 +51,28 @@ struct SearchablePDFBuilderTests {
     @Test func rejectsEmptyInput() {
         #expect(throws: SearchablePDFError.noPages) { try SearchablePDFBuilder.build(pages: []) }
     }
+
+    @Test(arguments: [0.0, -72.0, Double.infinity]) func rejectsNonPositiveOrInfiniteDPI(_ dpi: Double) throws {
+        let page = PDFPageInput(image: try blankImage(), lines: [], dpi: dpi)
+        #expect(throws: SearchablePDFError.invalidDPI(dpi)) { try SearchablePDFBuilder.build(pages: [page]) }
+    }
+
+    @Test func rejectsNaNDPI() throws {
+        let page = PDFPageInput(image: try blankImage(), lines: [], dpi: .nan)
+        do {
+            _ = try SearchablePDFBuilder.build(pages: [page])
+            Issue.record("Expected invalidDPI")
+        } catch SearchablePDFError.invalidDPI(let value) {
+            #expect(value.isNaN)
+        }
+    }
+
+    @Test func rejectsInvalidDPIOnAnyPage() throws {
+        let image = try blankImage()
+        let pages = [
+            PDFPageInput(image: image, lines: [], dpi: 100),
+            PDFPageInput(image: image, lines: [], dpi: 0),
+        ]
+        #expect(throws: SearchablePDFError.invalidDPI(0)) { try SearchablePDFBuilder.build(pages: pages) }
+    }
 }
