@@ -1,0 +1,27 @@
+included:
+  - packages/ScanCore/Sources
+  - packages/ScanCore/Tests
+excluded:
+  - packages/ScanCore/.build
+disabled_rules:
+  - trailing_comma
+  - todo
+  - nesting
+  - vertical_parameter_alignment
+line_length:
+  warning: 180
+  error: 240
+function_parameter_count:
+  warning: 14
+  error: 16
+cyclomatic_complexity:
+  ignores_case_statements: true
+identifier_name:
+  min_length: 1
+  max_length: 60
+type_body_length:
+  warning: 400
+file_length:
+  warning: 500
+function_body_length:
+  warning: 80
