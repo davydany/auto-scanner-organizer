@@ -37,6 +37,11 @@ struct FilenameBuilderTests {
         #expect(FilenameBuilder.uniqueBaseName("2026-08-28 A - B", existingFileNames: existing) == "2026-08-28 A - B (3)")
     }
 
+    @Test func treatsNamesDifferingOnlyInCaseAsCollisions() {
+        let existing: Set<String> = ["2026-08-28 A - b.pdf"]
+        #expect(FilenameBuilder.uniqueBaseName("2026-08-28 A - B", existingFileNames: existing) == "2026-08-28 A - B (2)")
+    }
+
     @Test func usesUntitledWhenTitleSanitizesToEmpty() {
         #expect(FilenameBuilder.baseName(date: day, from: "Sender", title: "///") == "2026-08-28 Sender - Untitled")
         #expect(FilenameBuilder.baseName(date: day, from: nil, title: "") == "2026-08-28 Untitled")

@@ -99,11 +99,13 @@ public struct Filer: Sendable {
 
         let pdfURL = folderURL.appending(path: "\(baseName).pdf")
         let noteURL = folderURL.appending(path: "\(baseName).md")
-        try fileSystem.writeAtomically(request.pdfData, to: pdfURL)
+        // Create-only writes: a filed document never replaces an existing file, even one the listing missed.
+        try fileSystem.createNewFile(request.pdfData, at: pdfURL)
         do {
-            try fileSystem.writeAtomically(Data(NoteWriter.render(note).utf8), to: noteURL)
+            try fileSystem.createNewFile(Data(NoteWriter.render(note).utf8), at: noteURL)
         } catch {
             // Spec §13: a vault write failure must not leave a partial file behind.
+            // The PDF was created by this call, so removing it can never delete an owner file.
             try? fileSystem.removeItem(at: pdfURL)
             throw error
         }
@@ -170,9 +172,9 @@ public struct Filer: Sendable {
         return nil
     }
 
-    /// Collapses every run of whitespace (spaces, tabs, `\r`, `\n`, `\r\n`) into a single space and
-    /// trims both ends, so duplicate matching isn't sensitive to how a title/sender was line-broken.
+    /// Collapses every run of whitespace (spaces, tabs, `\r`, `\n`, `\r\n`) into a single space, trims both ends,
+    /// and lowercases, so duplicate matching isn't sensitive to line breaks or letter case.
     private static func normalizedForComparison(_ text: String) -> String {
-        text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        text.split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
     }
 }

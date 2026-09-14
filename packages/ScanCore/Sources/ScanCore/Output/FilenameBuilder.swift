@@ -25,9 +25,12 @@ public enum FilenameBuilder {
         return truncate(name)
     }
 
+    /// Names that differ only in letter case collide: the default macOS and iCloud Drive volumes are case-insensitive.
     public static func uniqueBaseName(_ base: String, existingFileNames: Set<String>) -> String {
+        let taken = Set(existingFileNames.map { $0.lowercased() })
         func isTaken(_ candidate: String) -> Bool {
-            existingFileNames.contains("\(candidate).pdf") || existingFileNames.contains("\(candidate).md")
+            let lowered = candidate.lowercased()
+            return taken.contains("\(lowered).pdf") || taken.contains("\(lowered).md")
         }
         guard isTaken(base) else { return base }
         var counter = 2

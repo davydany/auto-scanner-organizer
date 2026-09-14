@@ -18,6 +18,11 @@ private struct FailingNoteWritesFileSystem: FileSystem {
         try inner.writeAtomically(data, to: url)
     }
 
+    func createNewFile(_ data: Data, at url: URL) throws {
+        if url.pathExtension == "md" { throw CocoaError(.fileWriteNoPermission) }
+        try inner.createNewFile(data, at: url)
+    }
+
     func moveItem(at source: URL, to destination: URL) throws { try inner.moveItem(at: source, to: destination) }
     func removeItem(at url: URL) throws { try inner.removeItem(at: url) }
 }

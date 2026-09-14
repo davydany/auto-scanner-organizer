@@ -21,6 +21,31 @@ struct LocalFileSystemTests {
         #expect(try fileSystem.contentsOfDirectory(at: folder).map(\.lastPathComponent) == ["note.md"])
     }
 
+    @Test func createsNewFileWithoutLeavingTemporaryFiles() throws {
+        let temp = try TemporaryDirectory()
+        defer { temp.remove() }
+        let file = temp.url.appending(path: "doc.pdf")
+
+        try fileSystem.createNewFile(Data("new".utf8), at: file)
+
+        #expect(try fileSystem.readData(at: file) == Data("new".utf8))
+        let names = try FileManager.default.contentsOfDirectory(atPath: temp.url.path(percentEncoded: false))
+        #expect(names == ["doc.pdf"])
+    }
+
+    @Test func createNewFileRefusesToReplaceAnExistingFile() throws {
+        let temp = try TemporaryDirectory()
+        defer { temp.remove() }
+        let file = temp.url.appending(path: "doc.pdf")
+        try Data("original".utf8).write(to: file)
+
+        #expect(throws: (any Error).self) { try fileSystem.createNewFile(Data("replacement".utf8), at: file) }
+
+        #expect(try fileSystem.readData(at: file) == Data("original".utf8))
+        let names = try FileManager.default.contentsOfDirectory(atPath: temp.url.path(percentEncoded: false))
+        #expect(names == ["doc.pdf"])
+    }
+
     @Test func movesItems() throws {
         let temp = try TemporaryDirectory()
         defer { temp.remove() }
