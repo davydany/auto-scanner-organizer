@@ -100,6 +100,20 @@ struct ClaudeWireTests {
         #expect(StopReason(rawValue: "brand_new_reason").rawValue == "brand_new_reason")
     }
 
+    @Test func roundTripsToolResultAndImageBlocksThroughEncodeAndDecode() throws {
+        let blocks: [ContentBlock] = [
+            .toolResult(toolUseID: "t1", content: "Error: nope", isError: true),
+            .toolResult(toolUseID: "t2", content: "ok"),
+            .image(mediaType: "image/jpeg", base64Data: "AAAA"),
+        ]
+        for block in blocks {
+            let data = try ClaudeWireJSON.encoder().encode(block)
+            let decoded = try ClaudeWireJSON.decoder().decode(ContentBlock.self, from: data)
+            #expect(decoded == block)
+        }
+        #expect(StopReason.stopSequence.rawValue == "stop_sequence")
+    }
+
     @Test func decodesAPIErrorBodiesAndPreservesSnakeCaseKeysInJSONValues() throws {
         let body = #"{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_1"}"#
         let error = try ClaudeWireJSON.decoder().decode(APIErrorBody.self, from: Data(body.utf8))

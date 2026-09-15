@@ -33,6 +33,14 @@ public enum ContentBlock: Codable, Sendable, Equatable {
                              signature: try container.decode(String.self, forKey: .signature))
         case "redacted_thinking":
             self = .redactedThinking(data: try container.decode(String.self, forKey: .data))
+        case "tool_result":
+            self = .toolResult(toolUseID: try container.decode(String.self, forKey: .toolUseID),
+                               content: try container.decode(String.self, forKey: .content),
+                               isError: try container.decodeIfPresent(Bool.self, forKey: .isError) ?? false)
+        case "image":
+            let source = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .source)
+            self = .image(mediaType: try source.decode(String.self, forKey: .mediaType),
+                          base64Data: try source.decode(String.self, forKey: .data))
         default:
             self = .other(try JSONValue(from: decoder))
         }

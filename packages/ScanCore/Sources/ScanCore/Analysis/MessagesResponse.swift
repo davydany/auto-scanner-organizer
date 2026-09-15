@@ -22,6 +22,7 @@ public struct StopReason: RawRepresentable, Codable, Sendable, Equatable, Hashab
     public static let pauseTurn = StopReason(rawValue: "pause_turn")
     public static let refusal = StopReason(rawValue: "refusal")
     public static let modelContextWindowExceeded = StopReason(rawValue: "model_context_window_exceeded")
+    public static let stopSequence = StopReason(rawValue: "stop_sequence")
 }
 
 /// Populated only on refusals; `category` is an open set and may be null (API reference §4).
