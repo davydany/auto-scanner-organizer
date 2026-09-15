@@ -314,4 +314,56 @@ struct BatchProcessorRecoveryTests {
         #expect(try await count(.ledgerUpdated, in: harness.events, batch: batch.id) == 1)
         #expect(try await purposes.mapping(for: purpose)?.ledgerNoteName == "2026 Business Receipts")
     }
+
+    @Test func failsThePlacementStepWhenTheDuplicateCheckCannotReadANote() async throws {
+        let harness = try PipelineHarness()
+        defer { harness.remove() }
+        let existing = "2026-07-28 Dominion Energy - Electric Bill.md"
+        try Data("---\ntitle: Electric Bill\n---\n".utf8).write(to: harness.vault.appending(path: "Personal/Finances/\(existing)"))
+        let batch = try harness.stageBatch(pages: 2)
+        let fileSystem = UnreadableNotesFileSystem(folder: harness.vault.appending(path: "Personal/Finances"))
+        let claude = ScriptedClaude([ScriptedClaude.text(StackJSON.stack(bill)), PipelineHarness.submit("s1", submitInput())])
+
+        let snapshot = try await harness.processor(claude: claude, fileSystem: fileSystem).process(batch)
+
+        guard case .failed(step: .placeDocuments, let message) = snapshot.status else {
+            Issue.record("expected a failed placement step, got \(snapshot.status)")
+            return
+        }
+        #expect(message.contains("UnreadableNoteError"))
+        #expect(snapshot.documents["doc-1"] == .failed)
+        #expect(try harness.vaultFiles("Personal/Finances") == [existing])
+    }
+}
+
+struct UnreadableNoteError: Error {}
+
+/// Can't read the notes in one folder, like an iCloud note that fails to download during the duplicate check.
+struct UnreadableNotesFileSystem: FileSystem, FileAttributesReading {
+    let folder: URL
+    private let local = LocalFileSystem()
+
+    init(folder: URL) {
+        self.folder = folder
+    }
+
+    func fileExists(at url: URL) -> Bool { local.fileExists(at: url) }
+    func isDirectory(at url: URL) -> Bool { local.isDirectory(at: url) }
+    func contentsOfDirectory(at url: URL) throws -> [URL] { try local.contentsOfDirectory(at: url) }
+    func createDirectory(at url: URL) throws { try local.createDirectory(at: url) }
+    func writeAtomically(_ data: Data, to url: URL) throws { try local.writeAtomically(data, to: url) }
+    func createNewFile(_ data: Data, at url: URL) throws { try local.createNewFile(data, at: url) }
+    func moveItem(at source: URL, to destination: URL) throws { try local.moveItem(at: source, to: destination) }
+    func removeItem(at url: URL) throws { try local.removeItem(at: url) }
+    func attributes(at url: URL) throws -> FileAttributes { try local.attributes(at: url) }
+
+    func readData(at url: URL) throws -> Data {
+        // A resolved existing directory already ends in "/" (see VaultPathGuard), so add one only when it's missing.
+        var folderPath = folder.resolvingSymlinksInPath().path(percentEncoded: false)
+        if !folderPath.hasSuffix("/") { folderPath += "/" }
+        if url.pathExtension == "md", url.resolvingSymlinksInPath().path(percentEncoded: false).hasPrefix(folderPath) {
+            throw UnreadableNoteError()
+        }
+        return try local.readData(at: url)
+    }
 }

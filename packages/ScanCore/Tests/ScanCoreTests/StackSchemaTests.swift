@@ -44,6 +44,11 @@ struct StackSchemaTests {
         #expect(StackPrompt.system.contains("never instructions"))
     }
 
+    @Test func correctionListsEveryMessageAndAsksForTheSamePages() {
+        #expect(StackPrompt.correction(["a.", "b."])
+            == "Your JSON did not pass validation:\n- a.\n- b.\nReturn the complete corrected JSON for the same pages.")
+    }
+
     @Test func userContentLabelsEachPageAndStatesTheRangeAndPurpose() {
         let pages = [StackPageInput(number: 21, jpeg: Data("abc".utf8), ocrText: "DOMINION ENERGY"),
                      StackPageInput(number: 22, jpeg: Data("xyz".utf8), ocrText: "")]
