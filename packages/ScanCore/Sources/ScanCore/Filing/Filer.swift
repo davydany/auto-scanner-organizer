@@ -1,6 +1,6 @@
 import Foundation
 
-public struct LedgerFiling: Sendable, Equatable {
+public struct LedgerFiling: Codable, Sendable, Equatable {
     public var noteName: String
     /// Vault-relative folder of the purpose; the ledger note lives here (spec §10.4).
     public var folder: String
