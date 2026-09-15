@@ -82,13 +82,27 @@ public struct StoredFiling: Codable, Sendable, Equatable {
     public var docDate: CalendarDay
     public var ledger: LedgerFiling?
     public var ledgerUpdated: Bool
+    /// Filing created `folder`, so a resumed filing can record a lost `folderCreated` event.
+    public var createdFolder: Bool
 
-    public init(baseName: String, folder: String, docDate: CalendarDay, ledger: LedgerFiling?, ledgerUpdated: Bool) {
+    public init(baseName: String, folder: String, docDate: CalendarDay, ledger: LedgerFiling?, ledgerUpdated: Bool, createdFolder: Bool) {
         self.baseName = baseName
         self.folder = folder
         self.docDate = docDate
         self.ledger = ledger
         self.ledgerUpdated = ledgerUpdated
+        self.createdFolder = createdFolder
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        baseName = try container.decode(String.self, forKey: .baseName)
+        folder = try container.decode(String.self, forKey: .folder)
+        docDate = try container.decode(CalendarDay.self, forKey: .docDate)
+        ledger = try container.decodeIfPresent(LedgerFiling.self, forKey: .ledger)
+        ledgerUpdated = try container.decode(Bool.self, forKey: .ledgerUpdated)
+        // Filings saved before this field existed have no key; they load as not having created their folder.
+        createdFolder = try container.decodeIfPresent(Bool.self, forKey: .createdFolder) ?? false
     }
 }
 

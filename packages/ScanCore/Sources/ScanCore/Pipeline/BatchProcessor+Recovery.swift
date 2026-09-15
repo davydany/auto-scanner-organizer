@@ -11,10 +11,7 @@ extension BatchProcessor {
     /// updates only the ledger with `Filer.updateLedger` — never files again (spec §10.4, Milestone 1 carry-forward).
     func resumeFiling(_ stored: StoredFiling, documentID: String, batch: StagedBatch, artifacts: BatchArtifacts) async throws {
         var filing = stored
-        let recorded = try await services.events.events(forBatch: batch.id).filter { $0.documentID == documentID }.map(\.kind)
-        if !recorded.contains(.noteWritten) {
-            try await recordWrites(filing, createdFolder: false, documentID: documentID, batch: batch.id)
-        }
+        try await recordWrites(filing, documentID: documentID, batch: batch.id)
         if let ledger = filing.ledger, !filing.ledgerUpdated {
             let filer = Filer(vaultRoot: configuration.vaultRoot, fileSystem: services.fileSystem)
             do {

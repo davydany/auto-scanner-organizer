@@ -20,7 +20,7 @@ struct BatchArtifactsTests {
                                   purpose: "2026 taxes", taxYear: 2026, from: "Staples", amount: Decimal(string: "84.17") ?? 0, currency: "USD",
                                   category: .officeSupplies)
         let filing = StoredFiling(baseName: "2026-09-02 Staples - Receipt", folder: "Personal/Finances", docDate: try #require(CalendarDay("2026-09-02")),
-                                  ledger: ledger, ledgerUpdated: false)
+                                  ledger: ledger, ledgerUpdated: false, createdFolder: true)
 
         try artifacts.saveOCR(pages)
         try artifacts.saveStack(stack)
@@ -35,6 +35,22 @@ struct BatchArtifactsTests {
         #expect(try artifacts.loadFiling(documentID: "doc-1") == filing)
         let names = try FileManager.default.contentsOfDirectory(atPath: temp.url.appending(path: ".scancore").path(percentEncoded: false)).sorted()
         #expect(names == ["filing-doc-1.json", "ocr.json", "placement-doc-1.json", "placement-doc-2.json", "stack.json"])
+    }
+
+    @Test func filingsSavedBeforeCreatedFolderExistedStillLoad() throws {
+        let temp = try TemporaryDirectory()
+        defer { temp.remove() }
+        let artifacts = BatchArtifacts(batchFolder: temp.url)
+        let filing = StoredFiling(baseName: "2026-09-02 Staples - Receipt", folder: "Personal/Finances", docDate: try #require(CalendarDay("2026-09-02")),
+                                  ledger: nil, ledgerUpdated: true, createdFolder: true)
+        var object = try #require(try JSONSerialization.jsonObject(with: ScanCoreJSON.encoder().encode(filing)) as? [String: Any])
+        #expect(object.removeValue(forKey: "created_folder") as? Bool == true)
+        try FileManager.default.createDirectory(at: artifacts.folder, withIntermediateDirectories: true)
+        try JSONSerialization.data(withJSONObject: object).write(to: artifacts.folder.appending(path: "filing-doc-1.json"))
+
+        var legacy = filing
+        legacy.createdFolder = false
+        #expect(try artifacts.loadFiling(documentID: "doc-1") == legacy)
     }
 
     @Test func missingArtifactsAreNilAndCorruptOnesThrow() throws {

@@ -39,10 +39,10 @@ struct PipelineHarness {
 
     func processor(claude: any ClaudeMessaging, recognizer: any TextRecognizer = FakeTextRecognizer(),
                    fileSystem: any FileSystem & FileAttributesReading = LocalFileSystem(), events: (any EventStore)? = nil,
-                   threshold: Double = 0.75) -> BatchProcessor {
+                   purposes: (any PurposeStore)? = nil, threshold: Double = 0.75) -> BatchProcessor {
         BatchProcessor(
             configuration: PipelineConfiguration(stagingRoot: staging, vaultRoot: vault, model: .sonnet5, threshold: threshold, timeZone: Self.utc),
-            services: PipelineServices(fileSystem: fileSystem, events: events ?? self.events, purposes: purposes, pages: FakePageSource(),
+            services: PipelineServices(fileSystem: fileSystem, events: events ?? self.events, purposes: purposes ?? self.purposes, pages: FakePageSource(),
                                        recognizer: recognizer, claude: claude, now: { PipelineHarness.startedAt })
         )
     }

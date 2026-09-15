@@ -68,42 +68,55 @@ extension BatchProcessor {
             var payload = [JobPayloadKey.reasons: PipelinePayload.encodeReasons(reasons)]
             payload[JobPayloadKey.folder] = folder
             try await record(.needsReview, batch: batch.id, document: documentID, payload: payload)
-        case let .filed(filing, createdFolder):
+        case .filed(let filing):
             try artifacts.saveFiling(filing, documentID: documentID)
-            try await recordWrites(filing, createdFolder: createdFolder, documentID: documentID, batch: batch.id)
+            try await recordWrites(filing, documentID: documentID, batch: batch.id)
             try await finishFiling(filing, documentID: documentID, batch: batch)
-        case let .ledgerRejected(filing, createdFolder, reason):
+        case let .ledgerRejected(filing, reason):
             try artifacts.saveFiling(filing, documentID: documentID)
-            try await recordWrites(filing, createdFolder: createdFolder, documentID: documentID, batch: batch.id)
+            try await recordWrites(filing, documentID: documentID, batch: batch.id)
             try await record(.needsReview, batch: batch.id, document: documentID,
                              payload: [JobPayloadKey.reasons: PipelinePayload.encodeReasons([.ledgerRejected(reason: reason)])])
-        case let .ledgerFailed(filing, createdFolder, message):
+        case let .ledgerFailed(filing, message):
             try artifacts.saveFiling(filing, documentID: documentID)
-            try await recordWrites(filing, createdFolder: createdFolder, documentID: documentID, batch: batch.id)
+            try await recordWrites(filing, documentID: documentID, batch: batch.id)
             throw PipelineError.ledgerWriteFailed(message)
         }
     }
 
-    func recordWrites(_ filing: StoredFiling, createdFolder: Bool, documentID: String, batch batchID: String) async throws {
-        if createdFolder {
+    /// Records each vault write the document's events don't already hold, so a filing resumed after a lost event records it once.
+    func recordWrites(_ filing: StoredFiling, documentID: String, batch batchID: String) async throws {
+        let recorded = try await recordedKinds(of: documentID, batch: batchID)
+        if filing.createdFolder, !recorded.contains(.folderCreated) {
             try await record(.folderCreated, batch: batchID, document: documentID, payload: [JobPayloadKey.folder: filing.folder])
         }
-        try await record(.pdfWritten, batch: batchID, document: documentID, payload: [JobPayloadKey.noteName: filing.baseName])
-        var payload = [JobPayloadKey.noteName: filing.baseName, JobPayloadKey.folder: filing.folder]
-        if filing.ledger != nil {
-            payload[JobPayloadKey.ledger] = "pending"
+        if !recorded.contains(.pdfWritten) {
+            try await record(.pdfWritten, batch: batchID, document: documentID, payload: [JobPayloadKey.noteName: filing.baseName])
         }
-        try await record(.noteWritten, batch: batchID, document: documentID, payload: payload)
+        if !recorded.contains(.noteWritten) {
+            var payload = [JobPayloadKey.noteName: filing.baseName, JobPayloadKey.folder: filing.folder]
+            if filing.ledger != nil {
+                payload[JobPayloadKey.ledger] = "pending"
+            }
+            try await record(.noteWritten, batch: batchID, document: documentID, payload: payload)
+        }
     }
 
-    /// Records the ledger update and remembers the purpose's folder; the first filing that updates the purpose's ledger wins (spec §11).
+    /// Remembers the purpose's folder, then records the ledger update once; the first filing that updates the purpose's ledger wins (spec §11).
     /// A filing without a ledger, such as a document resolved in review that doesn't fit the purpose, never sets it.
+    /// `ledgerUpdated` marks the document filed, so it comes last: if remembering fails, the retry still finishes the document.
     func finishFiling(_ filing: StoredFiling, documentID: String, batch: StagedBatch) async throws {
         guard let ledger = filing.ledger else { return }
-        try await record(.ledgerUpdated, batch: batch.id, document: documentID, payload: [JobPayloadKey.noteName: ledger.noteName])
         if let purpose = batch.manifest.purpose {
             _ = try await services.purposes.saveIfAbsent(PurposeMapping(purpose: purpose, folder: ledger.folder, ledgerNoteName: ledger.noteName,
                                                                         createdAt: services.now()))
         }
+        if try await !recordedKinds(of: documentID, batch: batch.id).contains(.ledgerUpdated) {
+            try await record(.ledgerUpdated, batch: batch.id, document: documentID, payload: [JobPayloadKey.noteName: ledger.noteName])
+        }
+    }
+
+    func recordedKinds(of documentID: String, batch batchID: String) async throws -> [JobEventKind] {
+        try await services.events.events(forBatch: batchID).filter { $0.documentID == documentID }.map(\.kind)
     }
 }

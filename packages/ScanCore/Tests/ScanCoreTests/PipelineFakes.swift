@@ -40,6 +40,32 @@ actor ConcurrencyProbe {
     }
 }
 
+/// Fails the first `saveIfAbsent`, like a purpose file that can't be written.
+actor FlakyPurposeStore: PurposeStore {
+    private let base = InMemoryPurposeStore()
+    private var failsNextSave = true
+
+    func mapping(for purpose: String) async throws -> PurposeMapping? {
+        try await base.mapping(for: purpose)
+    }
+
+    func saveIfAbsent(_ mapping: PurposeMapping) async throws -> PurposeMapping {
+        if failsNextSave {
+            failsNextSave = false
+            throw CocoaError(.fileWriteUnknown)
+        }
+        return try await base.saveIfAbsent(mapping)
+    }
+
+    func recordUse(_ purpose: String) async throws {
+        try await base.recordUse(purpose)
+    }
+
+    func recentPurposes() async throws -> [String] {
+        try await base.recentPurposes()
+    }
+}
+
 struct FakeOCRError: Error, Equatable {
     let page: Int
 }

@@ -253,4 +253,65 @@ struct BatchProcessorRecoveryTests {
         try await filed.retry(batchID: other.id)
         #expect(try await harness.kinds(other.id).contains(.retryRequested) == false)
     }
+
+    func isFailedAtPlacement(_ snapshot: BatchSnapshot) -> Bool {
+        if case .failed(step: .placeDocuments, _) = snapshot.status { return true }
+        return false
+    }
+
+    func count(_ kind: JobEventKind, in events: any EventStore, batch batchID: String) async throws -> Int {
+        try await events.events(forBatch: batchID).filter { $0.documentID == "doc-1" && $0.kind == kind }.count
+    }
+
+    @Test func recordsALostNoteWriteOnceOnRetry() async throws {
+        let harness = try PipelineHarness()
+        defer { harness.remove() }
+        let batch = try harness.stageBatch(pages: 2)
+        let events = FlakyEventStore(failingOnce: .noteWritten)
+        let first = ScriptedClaude([ScriptedClaude.text(StackJSON.stack(bill)), PipelineHarness.submit("s1", submitInput())])
+        #expect(isFailedAtPlacement(try await harness.processor(claude: first, events: events).process(batch)))
+
+        let processor = harness.processor(claude: ScriptedClaude([]), events: events)
+        try await processor.retry(batchID: batch.id)
+
+        #expect(try await processor.process(batch).status == .filed)
+        #expect(try await count(.pdfWritten, in: events, batch: batch.id) == 1)
+        #expect(try await count(.noteWritten, in: events, batch: batch.id) == 1)
+    }
+
+    @Test func recordsALostFolderCreationOnceOnRetry() async throws {
+        let harness = try PipelineHarness()
+        defer { harness.remove() }
+        let batch = try harness.stageBatch(pages: 2)
+        let events = FlakyEventStore(failingOnce: .folderCreated)
+        let first = ScriptedClaude([ScriptedClaude.text(StackJSON.stack(bill)), PipelineHarness.submit("s1", submitInput(newSubfolder: "2026"))])
+        #expect(isFailedAtPlacement(try await harness.processor(claude: first, events: events).process(batch)))
+
+        let processor = harness.processor(claude: ScriptedClaude([]), events: events)
+        try await processor.retry(batchID: batch.id)
+
+        #expect(try await processor.process(batch).status == .filed)
+        #expect(try await count(.folderCreated, in: events, batch: batch.id) == 1)
+        #expect(try harness.vaultFiles("Personal/Finances/2026") == ["2026-08-28 Dominion Energy - Electric Bill.md",
+                                                                     "2026-08-28 Dominion Energy - Electric Bill.pdf"])
+    }
+
+    @Test func recordsTheLedgerUpdateOnceWhenRememberingThePurposeFails() async throws {
+        let harness = try PipelineHarness()
+        defer { harness.remove() }
+        let purpose = "2026 taxes, business receipts"
+        let batch = try harness.stageBatch(pages: 1, purpose: purpose)
+        let receipt = StackJSON.document(pages: [1], title: "Office Supplies Receipt", from: "Staples", docDate: "2026-09-02", docType: "receipt",
+                                         amount: "84.17", currency: "USD", purposeFit: fit)
+        let purposes = FlakyPurposeStore()
+        let first = ScriptedClaude([ScriptedClaude.text(StackJSON.stack(receipt)), PipelineHarness.submit("s1", submitInput(ledger: "2026 Business Receipts"))])
+        #expect(isFailedAtPlacement(try await harness.processor(claude: first, purposes: purposes).process(batch)))
+
+        let processor = harness.processor(claude: ScriptedClaude([]), purposes: purposes)
+        try await processor.retry(batchID: batch.id)
+
+        #expect(try await processor.process(batch).status == .filed)
+        #expect(try await count(.ledgerUpdated, in: harness.events, batch: batch.id) == 1)
+        #expect(try await purposes.mapping(for: purpose)?.ledgerNoteName == "2026 Business Receipts")
+    }
 }

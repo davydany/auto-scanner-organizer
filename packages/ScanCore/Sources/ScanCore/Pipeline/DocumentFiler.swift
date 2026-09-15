@@ -15,20 +15,21 @@ struct FilingContext {
 
 enum FilingStepOutcome: Equatable {
     case review(reasons: [ReviewReason], folder: String?)
-    case filed(StoredFiling, createdFolder: Bool)
-    case ledgerRejected(StoredFiling, createdFolder: Bool, reason: String)
-    case ledgerFailed(StoredFiling, createdFolder: Bool, message: String)
+    case filed(StoredFiling)
+    case ledgerRejected(StoredFiling, reason: String)
+    case ledgerFailed(StoredFiling, message: String)
 }
 
 /// The owner's approval from review: it overrides the judgment rules, but never the ones that protect the vault or the ledger.
 struct ReviewApproval: Equatable {
     var acceptPossibleDuplicate: Bool
 
+    /// Lists every reason with no default, so a new reason must be classified before it compiles.
     func stillBlocks(_ reason: ReviewReason) -> Bool {
         switch reason {
-        case .missingAmount, .ledgerNeedsAttention: true
+        case .missingAmount, .ledgerNeedsAttention, .folderMissing, .ledgerRejected: true
         case .possibleDuplicate: !acceptPossibleDuplicate
-        default: false
+        case .uncertainSplit, .splitOnChunkBoundary, .uncertainPlacement, .newTopLevelFolder, .purposeMismatch, .refused, .validationFailed: false
         }
     }
 }
@@ -83,15 +84,15 @@ struct DocumentFiler {
                                     note: note(for: context, placement: placement, fromPurposeMapping: fromPurposeMapping, docDate: docDate, filer: filer),
                                     ledger: ledger)
         func stored(_ result: FilingResult, ledgerUpdated: Bool) -> StoredFiling {
-            StoredFiling(baseName: result.baseName, folder: destination, docDate: docDate, ledger: ledger, ledgerUpdated: ledgerUpdated)
+            StoredFiling(baseName: result.baseName, folder: destination, docDate: docDate, ledger: ledger, ledgerUpdated: ledgerUpdated,
+                         createdFolder: result.createdFolder)
         }
         do {
-            let result = try filer.file(request)
-            return .filed(stored(result, ledgerUpdated: true), createdFolder: result.createdFolder)
+            return .filed(stored(try filer.file(request), ledgerUpdated: true))
         } catch FilingError.ledgerUpdateFailed(.ledger(let error), let result) {
-            return .ledgerRejected(stored(result, ledgerUpdated: false), createdFolder: result.createdFolder, reason: String(describing: error))
+            return .ledgerRejected(stored(result, ledgerUpdated: false), reason: String(describing: error))
         } catch FilingError.ledgerUpdateFailed(.io(let message), let result) {
-            return .ledgerFailed(stored(result, ledgerUpdated: false), createdFolder: result.createdFolder, message: message)
+            return .ledgerFailed(stored(result, ledgerUpdated: false), message: message)
         } catch FilingError.folderMissing(let folder) {
             return .review(reasons: [.folderMissing(folder: folder)], folder: placement.folder)
         }
