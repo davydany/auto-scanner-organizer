@@ -23,13 +23,18 @@ enum PageFixtures {
     }
 
     static func writePNG(_ image: CGImage, to url: URL, dpi: Double? = nil) throws {
-        try write(image, to: url, type: .png, properties: dpiProperties(dpi))
+        try write([image], to: url, type: .png, properties: dpiProperties(dpi))
     }
 
     static func writeJPEG(_ image: CGImage, to url: URL, orientation: Int, dpi: Double? = nil) throws {
         var properties = dpiProperties(dpi)
         properties[kCGImagePropertyOrientation as String] = orientation
-        try write(image, to: url, type: .jpeg, properties: properties)
+        try write([image], to: url, type: .jpeg, properties: properties)
+    }
+
+    /// A multi-page TIFF with one frame per image, written by a single destination.
+    static func writeTIFF(frames: [CGImage], to url: URL) throws {
+        try write(frames, to: url, type: .tiff, properties: [:])
     }
 
     /// A US Letter (612 × 792 pt) PDF with one text line per page.
@@ -58,11 +63,13 @@ enum PageFixtures {
         }
     }
 
-    private static func write(_ image: CGImage, to url: URL, type: UTType, properties: [String: Any]) throws {
-        guard let destination = CGImageDestinationCreateWithURL(url as CFURL, type.identifier as CFString, 1, nil) else {
+    private static func write(_ images: [CGImage], to url: URL, type: UTType, properties: [String: Any]) throws {
+        guard let destination = CGImageDestinationCreateWithURL(url as CFURL, type.identifier as CFString, images.count, nil) else {
             throw PageFixtureError.encodingFailed
         }
-        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
+        for image in images {
+            CGImageDestinationAddImage(destination, image, properties as CFDictionary)
+        }
         guard CGImageDestinationFinalize(destination) else { throw PageFixtureError.encodingFailed }
     }
 }

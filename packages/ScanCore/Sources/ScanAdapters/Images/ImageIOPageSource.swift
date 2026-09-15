@@ -13,17 +13,26 @@ public struct ImageIOPageSource: PageImageSource {
 
     public init() {}
 
+    /// One ref per PDF page and per TIFF frame; every other image is a single page at index 0.
     public func pageRefs(for files: [URL]) throws -> [PageRef] {
         var refs: [PageRef] = []
         for file in files {
+            let name = file.lastPathComponent
+            let pageCount: Int
             if Self.isPDF(file) {
                 guard let document = CGPDFDocument(file as CFURL), document.numberOfPages > 0 else {
-                    throw PageImageError.unreadable(file.lastPathComponent)
+                    throw PageImageError.unreadable(name)
                 }
-                refs += (0..<document.numberOfPages).map { PageRef(fileName: file.lastPathComponent, pageIndex: $0) }
+                pageCount = document.numberOfPages
+            } else if Self.isTIFF(file) {
+                guard let source = CGImageSourceCreateWithURL(file as CFURL, nil), CGImageSourceGetCount(source) > 0 else {
+                    throw PageImageError.unreadable(name)
+                }
+                pageCount = CGImageSourceGetCount(source)
             } else {
-                refs.append(PageRef(fileName: file.lastPathComponent, pageIndex: 0))
+                pageCount = 1
             }
+            refs += (0..<pageCount).map { PageRef(fileName: name, pageIndex: $0) }
         }
         return refs
     }
@@ -34,7 +43,7 @@ public struct ImageIOPageSource: PageImageSource {
             return try Self.renderPDFPage(url, index: page.pageIndex, name: page.fileName)
         }
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any],
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, page.pageIndex, nil) as? [String: Any],
               let width = properties[kCGImagePropertyPixelWidth as String] as? Int,
               let height = properties[kCGImagePropertyPixelHeight as String] as? Int
         else { throw PageImageError.unreadable(page.fileName) }
@@ -43,7 +52,7 @@ public struct ImageIOPageSource: PageImageSource {
             kCGImageSourceThumbnailMaxPixelSize: max(width, height),
             kCGImageSourceCreateThumbnailWithTransform: true,
         ]
-        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, page.pageIndex, options as CFDictionary) else {
             throw PageImageError.unreadable(page.fileName)
         }
         let fileDPI = properties[kCGImagePropertyDPIWidth as String] as? Double ?? 0
@@ -63,6 +72,10 @@ public struct ImageIOPageSource: PageImageSource {
 
     private static func isPDF(_ url: URL) -> Bool {
         url.pathExtension.lowercased() == "pdf"
+    }
+
+    private static func isTIFF(_ url: URL) -> Bool {
+        url.pathExtension.lowercased() == "tiff"
     }
 
     private static func renderPDFPage(_ url: URL, index: Int, name: String) throws -> PageImage {

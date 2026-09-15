@@ -23,6 +23,19 @@ struct ImageIOPageSourceTests {
         ])
     }
 
+    @Test func expandsMultiPageTIFFsIntoOnePageRefPerFrame() throws {
+        let temp = try TemporaryDirectory()
+        defer { temp.remove() }
+        let tiff = temp.url.appending(path: "receipts.tiff")
+        try PageFixtures.writeTIFF(frames: [try PageFixtures.textPage(["FIRST"], width: 850, height: 1100),
+                                            try PageFixtures.textPage(["SECOND"], width: 1275, height: 1650)], to: tiff)
+        let frames = [PageRef(fileName: "receipts.tiff", pageIndex: 0), PageRef(fileName: "receipts.tiff", pageIndex: 1)]
+
+        #expect(try source.pageRefs(for: [tiff]) == frames)
+        let sizes = try frames.map { try source.loadImage($0, in: temp.url).image }.map { [$0.width, $0.height] }
+        #expect(sizes == [[850, 1100], [1275, 1650]])
+    }
+
     @Test func rendersPDFPagesAt300DPI() throws {
         let temp = try TemporaryDirectory()
         defer { temp.remove() }
@@ -86,10 +99,13 @@ struct ImageIOPageSourceTests {
         defer { temp.remove() }
         try Data("not an image".utf8).write(to: temp.url.appending(path: "bad.png"))
         try Data("not a pdf".utf8).write(to: temp.url.appending(path: "bad.pdf"))
+        try Data("not a tiff".utf8).write(to: temp.url.appending(path: "bad.tiff"))
 
         #expect(throws: PageImageError.unreadable("bad.png")) {
             try source.loadImage(PageRef(fileName: "bad.png", pageIndex: 0), in: temp.url)
         }
         #expect(throws: PageImageError.unreadable("bad.pdf")) { try source.pageRefs(for: [temp.url.appending(path: "bad.pdf")]) }
+        #expect(throws: PageImageError.unreadable("bad.tiff")) { try source.pageRefs(for: [temp.url.appending(path: "bad.tiff")]) }
+        #expect(throws: PageImageError.unreadable("missing.tiff")) { try source.pageRefs(for: [temp.url.appending(path: "missing.tiff")]) }
     }
 }
