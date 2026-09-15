@@ -85,9 +85,9 @@ We chose **option 1 with (a)**.
 ## Consequences
 
 - `ScanCore` tests stay fast and framework-free.
-- `ScanAdapters` tests exercise real Vision, ImageIO, PDFKit, and URLSession (with a stubbed `URLProtocol`, never the network).
+- `ScanAdapters` tests exercise real Vision, ImageIO, CoreGraphics PDF rendering, FSEvents, and URLSession (with a stubbed `URLProtocol`, never the network).
 - The owner can run `scan-organizer` against a real staging folder and vault once an API key is set. Its behavior matches what the Milestone 3 app will do, because the app will call the same batch processor.
 - The event log file grows without bound. Compaction or rotation is deferred until it matters.
-- A crash mid-append can leave a partial last line in the event log. The store ignores an undecodable final line, so no completed event is lost.
-- The spec's §4 and §12 wording is superseded for Milestone 2 by this record, and spec §20 gains a Milestone 2 amendment when the milestone lands.
+- A crash mid-append can leave a partial last line in the event log. Reads ignore an unterminated final line and never modify the file, and the next append trims the fragment, so no completed event is lost. The trim relies on one appending store per file: the data-directory lock excludes other processes, and the Milestone 3 app must share one store instance.
+- The spec's §4 and §12 wording is superseded for Milestone 2 by this record, and spec §21 records the Milestone 2 amendments.
 - Revisit if the Milestone 3 app needs querying or syncing that the flat files can't serve, or if SwiftData becomes necessary for the History screen.

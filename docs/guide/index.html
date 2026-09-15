@@ -123,7 +123,9 @@ make check   # SwiftLint --strict, then every test (no network access)</pre>
       <h2 class="text-2xl font-semibold">7. Where state is kept</h2>
       <p><code>~/Library/Application Support/AutoScannerOrganizer/</code> holds <code>events.jsonl</code> (the append-only history of every
         batch, including tokens and estimated cost per Claude request) and <code>purposes.json</code> (remembered purpose folders and recent
-        purposes). Change it with <code>--data</code>.</p>
+        purposes). It also holds <code>scan-organizer.lock</code>, which <code>process</code>, <code>review</code>, and <code>retry</code>
+        hold while they run so only one pipeline command uses the folder at a time; <code>status</code> doesn't need it. Change the folder
+        with <code>--data</code>.</p>
     </section>
 
     <section class="glass p-6 space-y-3">

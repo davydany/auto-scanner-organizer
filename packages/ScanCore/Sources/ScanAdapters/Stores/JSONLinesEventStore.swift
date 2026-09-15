@@ -25,8 +25,9 @@ public actor JSONLinesEventStore: EventStore {
         }
         let handle = try FileHandle(forWritingTo: fileURL)
         defer { try? handle.close() }
-        // Trimming relies on a single writer per data directory, which `DataDirectoryLock` guarantees: bytes past the
-        // known-good length are then a fragment from a crash or a failed append, never another writer's event.
+        // Trimming relies on exactly one appending store per file. `DataDirectoryLock` excludes other processes, and callers in
+        // one process must share this instance. Bytes past the known-good length are then a fragment from a crash or a
+        // failed append, never another writer's event.
         if try handle.seekToEnd() > knownGoodLength {
             try handle.truncate(atOffset: knownGoodLength)
         }
