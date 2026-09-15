@@ -56,7 +56,7 @@ public struct PlacementValidator: Sendable {
         return nil
     }
 
-    private func subfolderProblem(_ name: String) -> String? {
+    func subfolderProblem(_ name: String) -> String? {
         guard !name.isEmpty, !name.hasPrefix("."), FilenameBuilder.sanitize(name) == name else {
             return "new_subfolder \"\(name)\" must be one folder name without / \\ : * ? \" < > | # ^ [ ], extra spaces, or a leading dot."
         }

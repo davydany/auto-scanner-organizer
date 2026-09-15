@@ -9,6 +9,8 @@ struct FilingContext {
     var placement: StoredPlacement
     var pageTexts: [PageText]
     var mapping: PurposeMapping?
+    /// Set when the owner resolved this document in review.
+    var approval: ReviewApproval?
 }
 
 enum FilingStepOutcome: Equatable {
@@ -16,6 +18,19 @@ enum FilingStepOutcome: Equatable {
     case filed(StoredFiling, createdFolder: Bool)
     case ledgerRejected(StoredFiling, createdFolder: Bool, reason: String)
     case ledgerFailed(StoredFiling, createdFolder: Bool, message: String)
+}
+
+/// The owner's approval from review: it overrides the judgment rules, but never the ones that protect the vault or the ledger.
+struct ReviewApproval: Equatable {
+    var acceptPossibleDuplicate: Bool
+
+    func stillBlocks(_ reason: ReviewReason) -> Bool {
+        switch reason {
+        case .missingAmount, .ledgerNeedsAttention: true
+        case .possibleDuplicate: !acceptPossibleDuplicate
+        default: false
+        }
+    }
 }
 
 /// Decides and files one document with no suspension point between the duplicate and ledger checks and the writes,
@@ -58,7 +73,10 @@ struct DocumentFiler {
             ledgerValid: ledgerTarget.isValid(with: filer)
         ))
         if case .needsReview(let reasons) = decision {
-            return .review(reasons: reasons, folder: placement.folder)
+            let blocking = context.approval.map { approval in reasons.filter(approval.stillBlocks) } ?? reasons
+            if !blocking.isEmpty {
+                return .review(reasons: blocking, folder: placement.folder)
+            }
         }
         let ledger = ledgerTarget.filing(for: document)
         let request = FilingRequest(destinationFolder: placement.folder, newSubfolder: placement.newSubfolder, pdfData: try pdfData(for: context),

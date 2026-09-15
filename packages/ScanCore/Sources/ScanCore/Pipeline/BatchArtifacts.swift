@@ -148,6 +148,14 @@ public struct BatchArtifacts: Sendable {
         try load(StoredFiling.self, from: "filing-\(documentID).json")
     }
 
+    public func saveResolution(_ resolution: ReviewResolution, documentID: String) throws {
+        try save(resolution, as: "resolution-\(documentID).json")
+    }
+
+    public func loadResolution(documentID: String) throws -> ReviewResolution? {
+        try load(ReviewResolution.self, from: "resolution-\(documentID).json")
+    }
+
     private func save(_ value: some Encodable, as name: String) throws {
         try fileSystem.createDirectory(at: folder)
         try fileSystem.writeAtomically(try ScanCoreJSON.encoder().encode(value), to: folder.appending(path: name))

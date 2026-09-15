@@ -12,14 +12,18 @@ extension BatchProcessor {
         if let purpose = batch.manifest.purpose {
             mapping = try await services.purposes.mapping(for: purpose)
         }
+        let resolution = try artifacts.loadResolution(documentID: documentID)
         let placement: StoredPlacement
-        if let failure = stack.failure {
+        if let resolution {
+            placement = try resolvedPlacement(resolution, documentID: documentID, artifacts: artifacts)
+        } else if let failure = stack.failure {
             placement = StoredPlacement(stackFailure: failure)
         } else {
             placement = try await decidePlacement(for: document, documentID: documentID, batch: batch, mapping: mapping, artifacts: artifacts)
         }
-        let context = FilingContext(batch: batch, document: document, documentIndex: index, stack: stack, placement: placement,
-                                    pageTexts: pageTexts, mapping: mapping)
+        var context = FilingContext(batch: batch, document: resolution?.applied(to: document) ?? document, documentIndex: index, stack: stack,
+                                    placement: placement, pageTexts: pageTexts, mapping: mapping)
+        context.approval = resolution.map { ReviewApproval(acceptPossibleDuplicate: $0.acceptPossibleDuplicate) }
         let outcome = try DocumentFiler(configuration: configuration, fileSystem: services.fileSystem, pages: services.pages).fileOrReview(context)
         try await recordOutcome(outcome, documentID: documentID, batch: batch, artifacts: artifacts)
     }
