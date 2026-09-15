@@ -1,8 +1,8 @@
 import Foundation
 
 /// Runs a staged batch through OCR, Claude, the filing rules, and the Filer, recording every step (spec §6–§13).
-/// Use one processor per vault: `DocumentFiler` runs synchronously on this actor, so documents never interleave
-/// writes to the same folder or ledger (Milestone 2 ADR).
+/// Use one processor per vault. `DocumentFiler` runs synchronously on this actor, so one document's window from the duplicate
+/// check to the ledger write is serialized. The other steps suspend, so process batches one at a time (Milestone 2 ADR).
 public actor BatchProcessor {
     let configuration: PipelineConfiguration
     let services: PipelineServices

@@ -434,3 +434,6 @@ The ADRs are in `docs/adrs/`, each dated 2026-09-14:
 - **§9, §13:** review reasons add `refused`, `validationFailed`, `folderMissing`, and `ledgerRejected`. Resolving a document in review overrides the judgment rules (confidence, chunk boundary, new top-level folder, purpose fit, refusal, validation) but not a missing amount, an invalid ledger, an unaccepted duplicate, or a missing folder. Editing page splits during review is deferred to Milestone 3.
 - **§10.4, §13:** a ledger write that fails with an I/O error fails the step; the retry updates only the ledger. A ledger that rejects the row (such as mixed currencies) sends the already-filed document to review, and resolving it retries only the ledger.
 - **§12:** `ScanCoreJSON` encodes dates as ISO 8601, and event payload keys avoid acronyms so they survive its key strategy.
+- **§6:** PDF pages are rendered with CoreGraphics at 300 dpi (not PDFKit).
+- **§11:** Only a filing that updates the purpose's ledger is remembered as the purpose's folder. A document resolved in review without a ledger, such as one that doesn't fit the purpose, never sets it.
+- **§12:** the `process`, `review`, and `retry` commands lock the data directory, so only one pipeline command runs at a time. `status` only reads and doesn't lock.

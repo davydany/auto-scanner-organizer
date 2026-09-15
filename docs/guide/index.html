@@ -17,6 +17,7 @@
              border-radius: 20px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); }
     pre { background: #0F172A; color: #E2E8F0; border-radius: 14px; padding: 16px; overflow-x: auto; font-size: 13px; }
     td, th { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid rgba(100, 116, 139, 0.15); }
+    .alert { background: rgba(255, 255, 255, 0.6); border-left: 4px solid #F59E0B; border-radius: 14px; padding: 12px 16px; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -76,8 +77,9 @@ make check   # SwiftLint --strict, then every test (no network access)</pre>
         <thead><tr><th>Command</th><th>What it does</th></tr></thead>
         <tbody>
           <tr><td><code>process --staging &lt;dir&gt; --vault &lt;dir&gt; [--watch]</code></td>
-            <td>Processes every ready batch once, or keeps watching. Options: <code>--model sonnet|opus|haiku</code>,
-              <code>--threshold 0.5–1.0</code> (default 0.75), <code>--data &lt;dir&gt;</code>.</td></tr>
+            <td>Processes every ready batch once, or keeps watching. Options: <code>--model sonnet|opus|haiku</code> or
+              <code>--model claude-sonnet-5|claude-opus-5|claude-haiku-4-5</code>, <code>--threshold 0.5–1.0</code> (default 0.75),
+              <code>--data &lt;dir&gt;</code>.</td></tr>
           <tr><td><code>status [--data &lt;dir&gt;]</code></td><td>Lists every batch, most recent first, with documents that need attention.</td></tr>
           <tr><td><code>review &lt;batch&gt; &lt;doc&gt; --staging … --vault … --folder &lt;path&gt;</code></td>
             <td>Files a document from Needs review. Optional corrections: <code>--subfolder</code>, <code>--title</code>, <code>--from</code>,
@@ -85,6 +87,9 @@ make check   # SwiftLint --strict, then every test (no network access)</pre>
           <tr><td><code>retry &lt;batch&gt; --staging … --vault …</code></td><td>Resumes a failed batch from the step that failed.</td></tr>
         </tbody>
       </table>
+      <p class="alert" role="note"><strong>One command at a time.</strong> <code>process</code>, <code>review</code>, and <code>retry</code>
+        lock the data directory, so only one of them can run against it at a time. Stop <code>process --watch</code> (Control-C) before
+        running <code>review</code> or <code>retry</code>. <code>status</code> only reads, so it is always safe.</p>
     </section>
 
     <section class="glass p-6 space-y-3">
@@ -92,10 +97,10 @@ make check   # SwiftLint --strict, then every test (no network access)</pre>
       <pre>Staging/
   2026-09-13-224203/        a scanner batch
     page-001.png …
-    batch.json              written last; marks the batch ready
-    .scancore/              saved OCR, stack, placements (lets a batch resume)
-  drop-2026-09-14-013006/   a file you dropped at the staging root, adopted after 5 s
-  _done/                    batches whose documents are all filed</pre>
+    batch.json              written last; marks it ready
+    .scancore/              saved steps, so it can resume
+  drop-2026-09-14-013006/   a dropped file, adopted after 5 s
+  _done/                    batches with every document filed</pre>
       <p>Drop <code>.pdf .png .jpg .jpeg .heic .tiff</code> files at the staging root to process existing scans. Folders starting with
         <code>.</code> and <code>_done</code> are ignored.</p>
     </section>
@@ -134,10 +139,15 @@ make check   # SwiftLint --strict, then every test (no network access)</pre>
       <table class="w-full text-sm">
         <tbody>
           <tr><td><code>error: Set ANTHROPIC_API_KEY…</code></td><td>Export the key in the shell that runs the command.</td></tr>
+          <tr><td><code>error: another scan-organizer command is using …</code></td><td>Another <code>process</code>, <code>review</code>, or
+            <code>retry</code> is using the same data directory. Stop it (Control-C in its terminal), then run your command again.</td></tr>
           <tr><td><code>failed at … http(status: 401 …)</code></td><td>The key is wrong or revoked; create a new one, then run <code>retry</code>.</td></tr>
           <tr><td><code>failed at … 429</code> or <code>529</code></td><td>Rate limits and overloads are retried three times automatically; run
             <code>retry</code> later.</td></tr>
           <tr><td><code>Claude declined (…)</code></td><td>Resolve the document with <code>review</code>.</td></tr>
+          <tr><td><code>the ledger rejected the row: …</code></td><td>Repair the ledger note (for example, a mixed currency), then run
+            <code>review</code> with any existing <code>--folder</code>. The document's PDF and note are already filed, so folder and amount
+            corrections don't apply; only the ledger row is retried.</td></tr>
           <tr><td>Vault write failures</td><td>iCloud placeholders or permissions: download the folder, check access, then <code>retry</code>.
             No partial files are left behind.</td></tr>
           <tr><td><code>batch.json is unreadable</code></td><td>The scanner stopped mid-write; fix or remove that batch folder.</td></tr>

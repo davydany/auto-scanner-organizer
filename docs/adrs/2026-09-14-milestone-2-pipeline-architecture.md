@@ -73,7 +73,11 @@ We chose **option 1 with (a)**.
   - A document split that falls on a chunk boundary goes to review (spec §8.1).
   - Each chunk is at most about 20 × 140 KB of base64, far below the 32 MB request limit.
 - **Request shape:** no `thinking`, `effort`, or sampling parameters are sent, so one request shape works for all three models. Sonnet 5 and Opus 5 think adaptively by default, so `max_tokens` is sized generously (16,000 for reading a stack, 4,096 per placement turn). The placement tool loop echoes every assistant content block back verbatim, including thinking blocks.
-- **Filing serialization:** one `BatchProcessor` actor per vault. The step from duplicate check to ledger update is synchronous actor-isolated code, so two batches can never interleave writes to the same folder or ledger.
+- **Filing serialization:**
+  - One `BatchProcessor` actor per vault serializes each document's steps from the duplicate check through the ledger update. They run as synchronous actor-isolated code with no suspension point between them.
+  - The processor's other steps await Claude and the stores, so its entry points can interleave there. Callers must process batches one at a time.
+  - The `scan-organizer` commands exclude each other with a lock on the data directory (`DataDirectoryLock`), so only one `process`, `review`, or `retry` runs at a time. `status` only reads and doesn't lock.
+  - The Milestone 3 app needs a serializing gate on every `BatchProcessor` entry point and on `StagingRunner.runOnce`.
 - **Ledger note name:** the first placement for a purpose batch also proposes a Title Case ledger name (for example `2026 Business Receipts`), validated like a filename. If there is none, the sanitized purpose text is used. The purpose mapping then remembers it.
 - **Dates in `ScanCoreJSON`:** dates are encoded as ISO 8601 (whole seconds), so `batch.json` and the event log stay human-readable. Nothing was persisted with the previous default, so there is no migration.
 - **Review split editing:** editing page splits during review is deferred to Milestone 3, where the review screen exists. Milestone 2's review resolution covers folder, subfolder, title, date, sender, amount, and currency choices.
