@@ -1,11 +1,19 @@
 import Foundation
-import ScanAdapters
 import ScanCore
 
-let arguments = Array(CommandLine.arguments.dropFirst())
-if arguments == ["--version"] {
-    print("scan-organizer \(ScanAdapters.version)")
-} else {
-    FileHandle.standardError.write(Data("usage: scan-organizer --version\n".utf8))
+let runner = CLIRunner(environment: ProcessInfo.processInfo.environment, output: { print($0) })
+do {
+    let command = try CLIArguments.parse(Array(CommandLine.arguments.dropFirst()),
+                                         currentDirectory: URL(filePath: FileManager.default.currentDirectoryPath),
+                                         home: FileManager.default.homeDirectoryForCurrentUser)
+    try await runner.run(command)
+} catch let error as CLIUsageError {
+    FileHandle.standardError.write(Data("error: \(error)\n\n\(CLIArguments.usage)\n".utf8))
     exit(64)
+} catch let error as ReviewError {
+    FileHandle.standardError.write(Data("error: \(error)\n".utf8))
+    exit(65)
+} catch {
+    FileHandle.standardError.write(Data("error: \(error)\n".utf8))
+    exit(1)
 }

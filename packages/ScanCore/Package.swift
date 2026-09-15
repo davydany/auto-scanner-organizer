@@ -16,5 +16,6 @@ let package = Package(
         .testTarget(name: "ScanCoreTests", dependencies: ["ScanCore"]),
         .testTarget(name: "ScanAdaptersTests", dependencies: ["ScanAdapters", "ScanCore"]),
         .testTarget(name: "LiveTests", dependencies: ["ScanAdapters", "ScanCore"]),
+        .testTarget(name: "ScanOrganizerCLITests", dependencies: ["ScanOrganizerCLI", "ScanCore"]),
     ]
 )
