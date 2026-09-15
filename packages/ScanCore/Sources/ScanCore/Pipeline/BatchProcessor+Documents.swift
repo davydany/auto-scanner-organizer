@@ -4,6 +4,10 @@ extension BatchProcessor {
     func handle(_ document: DocumentAnalysis, index: Int, of batch: StagedBatch, stack: StoredStack, pageTexts: [PageText],
                 artifacts: BatchArtifacts) async throws {
         let documentID = BatchArtifacts.documentID(at: index)
+        if let filing = try artifacts.loadFiling(documentID: documentID) {
+            try await resumeFiling(filing, documentID: documentID, batch: batch, artifacts: artifacts)
+            return
+        }
         var mapping: PurposeMapping?
         if let purpose = batch.manifest.purpose {
             mapping = try await services.purposes.mapping(for: purpose)
