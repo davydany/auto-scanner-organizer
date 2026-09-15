@@ -26,6 +26,8 @@ public enum LedgerError: Error, Equatable, Sendable {
     case mixedCurrency(existing: String, new: String)
     /// Carries the currency as given; a valid code is three letters A–Z after trimming and uppercasing.
     case invalidCurrency(String)
+    /// Carries the duplicated document note name.
+    case duplicateRow(String)
 }
 
 /// A purpose ledger note. Only the section between the markers is ever rewritten (spec §10.4).
@@ -63,12 +65,18 @@ public struct LedgerDocument: Sendable, Equatable {
         guard let start = starts.first, let end = ends.first, start < end else { throw LedgerError.markersMissing }
 
         var rows: [LedgerRow] = []
+        var seenDocuments: Set<String> = []
         for line in lines[(start + 1)..<end] {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty || trimmed == header || trimmed == separator || trimmed.hasPrefix("| **Total**") {
                 continue
             }
-            rows.append(try parseRow(trimmed))
+            let row = try parseRow(trimmed)
+            // Links resolve case-insensitively on the vault's volume, so "A" and "a" are the same document.
+            guard seenDocuments.insert(row.documentNoteName.lowercased()).inserted else {
+                throw LedgerError.duplicateRow(row.documentNoteName)
+            }
+            rows.append(row)
         }
         return LedgerDocument(rows: rows, prefixLines: Array(lines[..<start]), suffixLines: Array(lines[(end + 1)...]),
                               lineEnding: lineEnding)
@@ -111,10 +119,7 @@ public struct LedgerDocument: Sendable, Equatable {
 
     /// Trims and uppercases; anything but exactly three letters A–Z would render a row `parse` rejects.
     private static func normalizedCurrency(_ currency: String) throws -> String {
-        let code = currency.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        guard code.unicodeScalars.count == 3, code.unicodeScalars.allSatisfy({ ("A"..."Z").contains($0) }) else {
-            throw LedgerError.invalidCurrency(currency)
-        }
+        guard let code = CurrencyCode.normalized(currency) else { throw LedgerError.invalidCurrency(currency) }
         return code
     }
 

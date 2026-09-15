@@ -109,7 +109,11 @@ public struct Filer: Sendable {
         // Spec §10.2: Claude's fields are masked once, here, before they reach the filename or the note.
         let analysis = Self.masked(request.note.analysis)
         let baseName = FilenameBuilder.uniqueBaseName(
-            FilenameBuilder.baseName(date: request.note.docDate, from: analysis.from, title: analysis.title),
+            FilenameBuilder.baseName(
+                date: request.note.docDate,
+                from: analysis.from.map { SensitiveNumberMasker.mask(FilenameBuilder.sanitize($0)) },
+                title: SensitiveNumberMasker.mask(FilenameBuilder.sanitize(analysis.title))
+            ),
             existingFileNames: existingNames
         )
         var note = request.note
@@ -153,7 +157,7 @@ public struct Filer: Sendable {
     private func resolvedLedgerTarget(_ ledger: LedgerFiling) throws -> LedgerTarget {
         let folderURL = try vault.resolve(ledger.folder)
         let noteName = Self.ledgerNoteBaseName(ledger.noteName)
-        guard !noteName.isEmpty else { throw FilingError.invalidLedgerName(ledger.noteName) }
+        guard !noteName.isEmpty, !noteName.hasPrefix(".") else { throw FilingError.invalidLedgerName(ledger.noteName) }
         return LedgerTarget(filing: ledger, folderURL: folderURL, noteName: noteName)
     }
 
@@ -231,7 +235,13 @@ public struct Filer: Sendable {
     /// (spaces, tabs, `\r`, `\n`, `\r\n`) into a single space, trims both ends, and lowercases, so duplicate
     /// matching isn't sensitive to masking, line breaks, or letter case.
     private static func normalizedForComparison(_ text: String) -> String {
-        SensitiveNumberMasker.mask(text).split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
+        SensitiveNumberMasker.mask(collapsedWhitespace(text)).split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
+    }
+
+    /// Collapses every run of whitespace (including line breaks) into one space and trims both ends,
+    /// so a number split across lines is contiguous before masking.
+    private static func collapsedWhitespace(_ text: String) -> String {
+        text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
 
     /// A sender that is empty after normalization counts as no sender, as in NoteWriter and FilenameBuilder.
@@ -249,12 +259,12 @@ public struct Filer: Sendable {
     /// (summary, handwriting raw text, and page text are masked by NoteWriter).
     private static func masked(_ analysis: DocumentAnalysis) -> DocumentAnalysis {
         var analysis = analysis
-        analysis.title = SensitiveNumberMasker.mask(analysis.title)
-        analysis.from = analysis.from.map(SensitiveNumberMasker.mask)
+        analysis.title = SensitiveNumberMasker.mask(collapsedWhitespace(analysis.title))
+        analysis.from = analysis.from.map { SensitiveNumberMasker.mask(collapsedWhitespace($0)) }
         analysis.handwritten = analysis.handwritten.map { annotation in
             var annotation = annotation
-            annotation.paymentMethod = annotation.paymentMethod.map(SensitiveNumberMasker.mask)
-            annotation.checkNumber = annotation.checkNumber.map(SensitiveNumberMasker.mask)
+            annotation.paymentMethod = annotation.paymentMethod.map { SensitiveNumberMasker.mask(collapsedWhitespace($0)) }
+            annotation.checkNumber = annotation.checkNumber.map { SensitiveNumberMasker.mask(collapsedWhitespace($0)) }
             return annotation
         }
         analysis.keyFacts.accountLast4 = analysis.keyFacts.accountLast4.flatMap(lastFourDigits)
@@ -269,9 +279,9 @@ public struct Filer: Sendable {
 
     private static func masked(_ ledger: LedgerFiling) -> LedgerFiling {
         var ledger = ledger
-        ledger.noteName = SensitiveNumberMasker.mask(ledger.noteName)
-        ledger.title = SensitiveNumberMasker.mask(ledger.title)
-        ledger.from = SensitiveNumberMasker.mask(ledger.from)
+        ledger.noteName = SensitiveNumberMasker.mask(collapsedWhitespace(ledger.noteName))
+        ledger.title = SensitiveNumberMasker.mask(collapsedWhitespace(ledger.title))
+        ledger.from = SensitiveNumberMasker.mask(collapsedWhitespace(ledger.from))
         return ledger
     }
 }
