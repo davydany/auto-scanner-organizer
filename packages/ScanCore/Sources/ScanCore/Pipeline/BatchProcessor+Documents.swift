@@ -96,14 +96,14 @@ extension BatchProcessor {
         try await record(.noteWritten, batch: batchID, document: documentID, payload: payload)
     }
 
-    /// Records the ledger update and remembers the purpose's folder; the first successful filing wins (spec §11).
+    /// Records the ledger update and remembers the purpose's folder; the first filing that updates the purpose's ledger wins (spec §11).
+    /// A filing without a ledger, such as a document resolved in review that doesn't fit the purpose, never sets it.
     func finishFiling(_ filing: StoredFiling, documentID: String, batch: StagedBatch) async throws {
-        if let ledger = filing.ledger {
-            try await record(.ledgerUpdated, batch: batch.id, document: documentID, payload: [JobPayloadKey.noteName: ledger.noteName])
-        }
+        guard let ledger = filing.ledger else { return }
+        try await record(.ledgerUpdated, batch: batch.id, document: documentID, payload: [JobPayloadKey.noteName: ledger.noteName])
         if let purpose = batch.manifest.purpose {
-            _ = try await services.purposes.saveIfAbsent(PurposeMapping(purpose: purpose, folder: filing.ledger?.folder ?? filing.folder,
-                                                                        ledgerNoteName: filing.ledger?.noteName, createdAt: services.now()))
+            _ = try await services.purposes.saveIfAbsent(PurposeMapping(purpose: purpose, folder: ledger.folder, ledgerNoteName: ledger.noteName,
+                                                                        createdAt: services.now()))
         }
     }
 }

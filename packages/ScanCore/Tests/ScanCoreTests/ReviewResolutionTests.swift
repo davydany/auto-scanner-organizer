@@ -106,6 +106,24 @@ struct ReviewResolutionTests {
         #expect(try await harness.purposes.mapping(for: purpose)?.folder == "Work")
     }
 
+    @Test func neverRemembersAPurposeFolderFromAFilingWithoutALedger() async throws {
+        let harness = try PipelineHarness()
+        defer { harness.remove() }
+        let purpose = "2026 taxes, business receipts"
+        let batch = try harness.stageBatch(pages: 1, purpose: purpose)
+        let misfit = #"{"fits":false,"reason":"A personal utility bill.","tax_year":null,"tax_category":null,"expense_category":null}"#
+        let processor = harness.processor(claude: ScriptedClaude([ScriptedClaude.text(StackJSON.stack(StackJSON.document(pages: [1], purposeFit: misfit))),
+                                                                  PipelineHarness.submit("s1", submitInput(ledger: "2026 Business Receipts"))]))
+        _ = try await processor.process(batch)
+        #expect(try await reasons(harness, batch.id, "doc-1") == [.purposeMismatch(reason: "A personal utility bill.")])
+
+        let snapshot = try await processor.resolveReview(batch, documentID: "doc-1", resolution: ReviewResolution(folder: "Work"))
+
+        #expect(snapshot.status == .filed)
+        #expect(try await harness.purposes.mapping(for: purpose) == nil)
+        #expect(try harness.vaultFiles("Work") == ["2026-08-28 Dominion Energy - Electric Bill.md", "2026-08-28 Dominion Energy - Electric Bill.pdf"])
+    }
+
     @Test func filesAnUnreadableBatchOnceTheOwnerDescribesIt() async throws {
         let harness = try PipelineHarness()
         defer { harness.remove() }
