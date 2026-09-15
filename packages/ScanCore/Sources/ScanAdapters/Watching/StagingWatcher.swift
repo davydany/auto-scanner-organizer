@@ -13,11 +13,12 @@ public final class StagingWatcher: Sendable {
     }
 
     /// Yields once immediately, on every change under the root, and at least every `pollInterval`.
+    /// Only the newest signal is kept, so signals collapse into one while the consumer is busy with a pass.
     /// Cancelling the consuming task stops FSEvents and the ticker.
     public func changes() -> AsyncStream<Void> {
         let path = root.path(percentEncoded: false)
         let interval = pollInterval
-        return AsyncStream { continuation in
+        return AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             continuation.yield()
             let events = FSEventsSubscription.start(path: path) { continuation.yield() }
             let ticker = Task {

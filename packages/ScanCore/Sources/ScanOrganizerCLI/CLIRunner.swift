@@ -16,20 +16,36 @@ struct CLIRunner {
         case .status(let data):
             try await status(data: data)
         case let .process(options, watch):
+            let lock = try lockDataDirectory(options.data)
+            defer { lock.release() }
             try await process(options, watch: watch)
         case let .review(options, batchID, documentID, resolution):
+            let lock = try lockDataDirectory(options.data)
+            defer { lock.release() }
             let (configuration, services) = try pipeline(options)
             let batch = try stagedBatch(batchID, in: options.staging)
             let snapshot = try await BatchProcessor(configuration: configuration, services: services)
                 .resolveReview(batch, documentID: documentID, resolution: resolution)
             BatchReport.lines(for: snapshot, events: try await services.events.events(forBatch: batchID)).forEach(output)
         case let .retry(options, batchID):
+            let lock = try lockDataDirectory(options.data)
+            defer { lock.release() }
             let (configuration, services) = try pipeline(options)
             let batch = try stagedBatch(batchID, in: options.staging)
             let processor = BatchProcessor(configuration: configuration, services: services)
             try await processor.retry(batchID: batchID)
             let snapshot = try await processor.process(batch)
             BatchReport.lines(for: snapshot, events: try await services.events.events(forBatch: batchID)).forEach(output)
+        }
+    }
+
+    /// Held for the whole command, including a `--watch` loop, so two commands never overwrite each other's events and
+    /// purpose memory or file the same document twice. `status` only reads, so it never takes the lock.
+    private func lockDataDirectory(_ data: URL) throws -> DataDirectoryLock {
+        do {
+            return try DataDirectoryLock.acquire(in: data)
+        } catch DataDirectoryLockError.alreadyLocked {
+            throw CLIRunError(description: "another scan-organizer command is using \(data.path(percentEncoded: false)); stop it first")
         }
     }
 
@@ -74,7 +90,12 @@ struct CLIRunner {
         }
         output("Watching \(options.staging.path(percentEncoded: false)). Press Control-C to stop.")
         for await _ in StagingWatcher(root: options.staging).changes() {
-            try await report(try await runner.runOnce())
+            do {
+                try await report(try await runner.runOnce())
+            } catch {
+                // One failed pass, such as a staging folder that briefly can't be read, never stops watching.
+                output("error: \(error)")
+            }
         }
     }
 

@@ -54,4 +54,23 @@ struct StagingWatcherTests {
 
         #expect(await eventually { await counter.count >= 4 })
     }
+
+    @Test func keepsOnlyTheNewestTickWhileTheConsumerIsBusy() async throws {
+        let temp = try TemporaryDirectory()
+        defer { temp.remove() }
+        let interval = Duration.milliseconds(100)
+        var changes = StagingWatcher(root: temp.url, pollInterval: interval).changes().makeAsyncIterator()
+        _ = await changes.next()
+
+        try await Task.sleep(for: interval * 8)
+        let clock = ContinuousClock()
+        let start = clock.now
+        for _ in 0..<3 {
+            _ = await changes.next()
+        }
+
+        // A backlog would hand over all three at once. Holding only the newest tick means the first is the one buffered
+        // while busy, and the third arrives at least one poll interval after the second, because ticks sleep in between.
+        #expect(clock.now - start >= interval)
+    }
 }
