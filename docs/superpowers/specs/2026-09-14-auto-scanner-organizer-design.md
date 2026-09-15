@@ -412,7 +412,7 @@ The ADRs are in `docs/adrs/`, each dated 2026-09-14:
 
 ## 19. Open items to confirm during implementation
 
-- The API's per-request image limit, which sets the chunk size in §8.1.
+- The API's per-request image limit, which sets the chunk size in §8.1. **Resolved in Milestone 2:** at most 20 pages per read-stack request (see §21).
 - Whether the Canon MF4700 driver exposes duplex and ICA-based feeder document detection. If it doesn't, the Both sides toggle is disabled with an explanation.
 - The actual staging folder path. The mockups use `~/Documents/Scans/Staging` as a sample; the owner picks the real one in Settings.
 
@@ -424,3 +424,13 @@ The ADRs are in `docs/adrs/`, each dated 2026-09-14:
 - **§10.4:** the ledger lives in the filing's purpose folder (`LedgerFiling.folder`, validated before any write); CRLF is preserved; currency is trimmed, uppercased, and must be three letters A–Z; rows sort by date then document name; ledger-step failures carry the filing result for retry. See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md).
 - **§10.5:** the PDF and note are create-only writes and a failed note write removes the new PDF, so the ledger is the only replacing write; dot-folder destinations and empty ledger names are rejected before any write; notes symlinked from outside the vault or not valid UTF-8 are skipped as duplicates and treated as invalid ledgers. See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md).
 - **§12:** ScanCore types persist only through `ScanCoreJSON` (snake_case, sorted keys, non-finite numbers as strings, explicit `batch_id`/`document_id` keys). See [execution decisions](../../adrs/2026-09-14-filing-core-execution-decisions.md) and [ScanCoreJSON format](../../adrs/2026-09-14-scancorejson-persistence-format.md).
+
+## 21. Amendments (2026-09-14, Milestone 2 execution)
+
+- **§4, §12:** pipeline adapters live in a `ScanAdapters` target and the pipeline also runs from the `scan-organizer` command line. The event log is an append-only JSON Lines file and purpose memory is a JSON file, both in `~/Library/Application Support/AutoScannerOrganizer/`. Each batch keeps its OCR, stack, placements, filings, and review resolutions in a hidden `.scancore/` folder so it resumes without repeating work. Whether Milestone 3 moves to SwiftData is decided there. See the [Milestone 2 pipeline ADR](../../adrs/2026-09-14-milestone-2-pipeline-architecture.md).
+- **§8.1:** the read-stack step sends at most 20 pages per request, because larger image counts tighten the per-image size limit. Requests carry no `thinking`, `effort`, sampling, or `fallbacks` parameters, so one shape works for every model; `max_tokens` is 16,000 for reading a stack and 4,096 per placement turn. Usage and estimated cost are recorded on `stackRead` and `placementDecided`.
+- **§8.2:** amounts are plain decimal strings and optional fields are nullable, with every property required by the schema. A refusal, or an answer still invalid after the corrective retry, sends the whole batch to review as one document.
+- **§8.3:** `submit_placement` also returns `ledger_note_name` for purpose batches. Related notes are vault-relative paths without `.md`. Claude gets one nudge if it answers without submitting and one correction if its submission is invalid; after 8 tool calls, `submit_placement` is forced.
+- **§9, §13:** review reasons add `refused`, `validationFailed`, `folderMissing`, and `ledgerRejected`. Resolving a document in review overrides the judgment rules (confidence, chunk boundary, new top-level folder, purpose fit, refusal, validation) but not a missing amount, an invalid ledger, an unaccepted duplicate, or a missing folder. Editing page splits during review is deferred to Milestone 3.
+- **§10.4, §13:** a ledger write that fails with an I/O error fails the step; the retry updates only the ledger. A ledger that rejects the row (such as mixed currencies) sends the already-filed document to review, and resolving it retries only the ledger.
+- **§12:** `ScanCoreJSON` encodes dates as ISO 8601, and event payload keys avoid acronyms so they survive its key strategy.

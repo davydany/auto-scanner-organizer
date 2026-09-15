@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auto Scanner Organizer — Decisions</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif; background: linear-gradient(135deg, #EEF2FF 0%, #F0FFFE 40%, #FFF7ED 100%); color: #475569; }
+    h1 { color: #0F172A; }
+    .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.4);
+             border-radius: 20px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(100, 116, 139, 0.15); vertical-align: top; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <main class="max-w-3xl mx-auto px-6 py-12 space-y-8">
+    <header class="space-y-2">
+      <a class="text-sm font-semibold text-blue-600 hover:underline" href="../index.html">← Guide</a>
+      <h1 class="text-4xl font-extrabold">Decisions</h1>
+      <p>Architecture decision records live in <code>docs/adrs/</code>. Each records the context, the options, and why one was chosen.</p>
+    </header>
+    <section class="glass p-6">
+      <table class="w-full text-sm">
+        <tbody>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-native-swiftui-app.md">Build the app as a native SwiftUI Mac app</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-apple-vision-ocr-with-claude-analysis.md">Use Apple Vision for OCR and Claude for understanding</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-claude-sonnet-5-default-model.md">Default to Claude Sonnet 5, selectable in Settings</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-staging-folder-pipeline-boundary.md">Use a watched staging folder as the boundary between scanning and processing</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-vault-note-filename-and-ledger-format.md">Vault output: searchable PDF + Markdown note with fixed properties, date-first filenames, managed ledgers</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-batch-purpose-memory.md">Optional batch purpose, remembered as a fixed destination</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-run-outside-app-store-sandbox.md">Run outside the App Store sandbox; sign locally</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-no-docker-for-local-development.md">No Docker for local development; Makefile drives the native toolchain</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-xcodegen-for-xcode-project.md">Generate the Xcode project with XcodeGen; keep logic in a local Swift package</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-filing-core-execution-decisions.md">Filing core: decisions made while executing Milestone 1</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-scancorejson-persistence-format.md">ScanCoreJSON is the single JSON format for persisting ScanCore types</a></td></tr>
+          <tr><td>2026-09-14</td><td><a class="text-blue-600 hover:underline" href="../../adrs/2026-09-14-milestone-2-pipeline-architecture.md">Milestone 2 pipeline architecture: adapter target, CLI runner, file-backed stores, resumable artifacts</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
