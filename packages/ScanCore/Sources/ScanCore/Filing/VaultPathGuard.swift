@@ -14,7 +14,7 @@ public struct VaultPathGuard: Sendable {
     }
 
     public func resolve(_ relativePath: String) throws -> URL {
-        if relativePath.hasPrefix("/") || relativePath.hasPrefix("~") {
+        if relativePath.hasPrefix("/") || relativePath == "~" || relativePath.hasPrefix("~/") {
             throw PathGuardError.absolutePath(relativePath)
         }
         let candidate = Self.canonical(root.appending(path: relativePath))
