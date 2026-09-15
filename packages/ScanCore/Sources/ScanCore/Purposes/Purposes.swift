@@ -5,6 +5,16 @@ public enum PurposeKey {
     public static func normalize(_ purpose: String) -> String {
         purpose.lowercased().split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
+
+    /// Spec §11: most recent first, distinct by key, at most `limit`; blank purposes are ignored.
+    public static func updatedRecents(_ recents: [String], using purpose: String, limit: Int) -> [String] {
+        let trimmed = purpose.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return recents }
+        let key = normalize(trimmed)
+        var updated = recents.filter { normalize($0) != key }
+        updated.insert(trimmed, at: 0)
+        return Array(updated.prefix(limit))
+    }
 }
 
 public struct PurposeMapping: Codable, Sendable, Equatable {
@@ -51,14 +61,7 @@ public actor InMemoryPurposeStore: PurposeStore {
     }
 
     public func recordUse(_ purpose: String) async throws {
-        let trimmed = purpose.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        let key = PurposeKey.normalize(trimmed)
-        recents.removeAll { PurposeKey.normalize($0) == key }
-        recents.insert(trimmed, at: 0)
-        if recents.count > Self.recentLimit {
-            recents.removeLast(recents.count - Self.recentLimit)
-        }
+        recents = PurposeKey.updatedRecents(recents, using: purpose, limit: Self.recentLimit)
     }
 
     public func recentPurposes() async throws -> [String] {
