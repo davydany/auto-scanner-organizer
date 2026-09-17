@@ -43,6 +43,14 @@ public enum ReviewReason: Codable, Sendable, Equatable {
     case missingAmount
     case possibleDuplicate(of: String)
     case ledgerNeedsAttention
+    /// Claude declined the request (spec §8.1, §13); `category` is the API's refusal category, or "unspecified".
+    case refused(category: String)
+    /// Claude's answer failed validation after the corrective retry (spec §8.2, §8.3).
+    case validationFailed(message: String)
+    /// The chosen folder no longer exists at filing time (spec §13).
+    case folderMissing(folder: String)
+    /// The ledger step rejected the row (markers, unparseable rows, currency); the PDF and note are filed.
+    case ledgerRejected(reason: String)
 }
 
 public enum FilingDecision: Sendable, Equatable {

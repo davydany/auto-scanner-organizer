@@ -49,8 +49,8 @@ public struct LocalFileSystem: FileSystem {
 
     public func createNewFile(_ data: Data, at url: URL) throws {
         let temporary = url.deletingLastPathComponent().appending(path: ".\(UUID().uuidString).tmp")
-        try data.write(to: temporary, options: .withoutOverwriting)
         do {
+            try data.write(to: temporary, options: .withoutOverwriting)
             // Unlike a replacing write, moveItem refuses an existing destination
             // (case-insensitively on case-insensitive volumes).
             try FileManager.default.moveItem(at: temporary, to: url)

@@ -43,7 +43,7 @@ For each decision, the realistic alternative was one of these:
 
 ### Ledger placement and format (§10.4)
 - `LedgerFiling.folder` is the purpose's vault-relative folder, and the ledger note is created or updated there. The Filer resolves the folder through `VaultPathGuard` before any write. After creating the document's subfolder, it requires the folder to be an existing directory, and otherwise throws `folderMissing`. The note's link stays `[[<ledger name>]]`.
-- A ledger that uses CRLF keeps CRLF: parse detects `\r\n` and render re-emits it. New ledgers use LF. A file with mixed endings fails safe as `markersMissing`.
+- A ledger that uses CRLF keeps CRLF: parse detects `\r\n` and render re-emits it. New ledgers use LF. A file with mixed endings is split on CRLF: mixed endings inside the managed section fail safe as `unparseableRow`, and text outside it is preserved as written.
 - Currency is trimmed and uppercased, and must be exactly three letters A–Z, or `upsert` throws `invalidCurrency` before any row changes. `usd` and `USD` are the same currency.
 - Rows sort by date, then by document note name, so the order is deterministic.
 

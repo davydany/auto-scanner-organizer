@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auto Scanner Organizer — Setup and CLI Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: linear-gradient(135deg, #EEF2FF 0%, #F0FFFE 40%, #FFF7ED 100%); --heading: #0F172A; --body: #475569; }
+    body { font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif; background: var(--bg); color: var(--body); }
+    h1, h2, h3 { color: var(--heading); }
+    code, pre { font-family: 'IBM Plex Mono', 'Fira Code', monospace; }
+    .glass { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.4);
+             border-radius: 20px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); }
+    pre { background: #0F172A; color: #E2E8F0; border-radius: 14px; padding: 16px; overflow-x: auto; font-size: 13px; }
+    td, th { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid rgba(100, 116, 139, 0.15); }
+    .alert { background: rgba(255, 255, 255, 0.6); border-left: 4px solid #F59E0B; border-radius: 14px; padding: 12px 16px; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <main class="max-w-4xl mx-auto px-6 py-12 space-y-8">
+    <header class="space-y-3">
+      <p class="text-xs font-semibold uppercase tracking-widest text-blue-600">Milestone 2 · Analysis pipeline</p>
+      <h1 class="text-4xl font-extrabold">Auto Scanner Organizer</h1>
+      <p>Scanned pages land in a staging folder. Apple Vision reads the text on the Mac, Claude splits the stack and chooses a vault folder
+        with read-only tools, and each document is filed into your Obsidian vault as a searchable PDF with a Markdown note. In Milestone 2
+        the pipeline runs from the <code>scan-organizer</code> command line; the Mac app with scanning arrives in Milestone 3.</p>
+      <nav class="flex gap-4 text-sm font-semibold">
+        <a class="text-blue-600 hover:underline" href="DEPLOYMENT/index.html">Deployment</a>
+        <a class="text-blue-600 hover:underline" href="DECISIONS/index.html">Decisions</a>
+      </nav>
+    </header>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">1. Requirements</h2>
+      <ul class="list-disc pl-6 space-y-1">
+        <li>macOS 26 with Xcode 26.6 (Swift 6.3) installed and opened once to accept its license.</li>
+        <li><a class="text-blue-600 hover:underline" href="https://brew.sh">Homebrew</a>.</li>
+        <li>An Anthropic API key (see <a class="text-blue-600 hover:underline" href="#environment">Environment variables</a>).</li>
+      </ul>
+    </section>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">2. Set up and check</h2>
+      <pre>make init    # brew bundle: swiftlint, swiftformat, xcodegen
+make check   # SwiftLint --strict, then every test (no network access)</pre>
+      <p>Other targets: <code>make test</code>, <code>make lint</code>, <code>make format</code>, <code>make teardown</code>,
+        <code>make test-live</code>, and <code>make cli ARGS="…"</code>.</p>
+    </section>
+
+    <section id="environment" class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">3. Environment variables</h2>
+      <table class="w-full text-sm">
+        <thead><tr><th>Variable</th><th>Needed for</th><th>How to get it</th></tr></thead>
+        <tbody>
+          <tr><td><code>ANTHROPIC_API_KEY</code></td><td><code>process</code>, <code>review</code>, <code>retry</code>, and live tests</td>
+            <td>Sign in at <a class="text-blue-600 hover:underline" href="https://console.anthropic.com">console.anthropic.com</a>, open
+              Settings → API keys, and create a key. Add <code>export ANTHROPIC_API_KEY=…</code> to your shell profile. Never put it in the
+              repository or pass it as a command argument.</td></tr>
+          <tr><td><code>SCANCORE_LIVE</code></td><td>Live tests</td><td>Set to <code>1</code> by <code>make test-live</code>.</td></tr>
+          <tr><td><code>SCANCORE_LIVE_MODEL</code></td><td>Live tests (optional)</td>
+            <td><code>claude-sonnet-5</code> (default), <code>claude-opus-5</code>, or <code>claude-haiku-4-5</code>.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">4. Run the pipeline</h2>
+      <pre>swift run --package-path packages/ScanCore scan-organizer process \
+  --staging ~/Documents/Scans/Staging \
+  --vault "~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Vault" \
+  --watch</pre>
+      <table class="w-full text-sm">
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>process --staging &lt;dir&gt; --vault &lt;dir&gt; [--watch]</code></td>
+            <td>Processes every ready batch once, or keeps watching. Options: <code>--model sonnet|opus|haiku</code> or
+              <code>--model claude-sonnet-5|claude-opus-5|claude-haiku-4-5</code>, <code>--threshold 0.5–1.0</code> (default 0.75),
+              <code>--data &lt;dir&gt;</code>.</td></tr>
+          <tr><td><code>status [--data &lt;dir&gt;]</code></td><td>Lists every batch, most recent first, with documents that need attention.</td></tr>
+          <tr><td><code>review &lt;batch&gt; &lt;doc&gt; --staging … --vault … --folder &lt;path&gt;</code></td>
+            <td>Files a document from Needs review. Optional corrections: <code>--subfolder</code>, <code>--title</code>, <code>--from</code>,
+              <code>--date YYYY-MM-DD</code>, <code>--amount 12.50</code>, <code>--currency USD</code>, <code>--accept-duplicate</code>.</td></tr>
+          <tr><td><code>retry &lt;batch&gt; --staging … --vault …</code></td><td>Resumes a failed batch from the step that failed.</td></tr>
+        </tbody>
+      </table>
+      <p class="alert" role="note"><strong>One command at a time.</strong> <code>process</code>, <code>review</code>, and <code>retry</code>
+        lock the data directory, so only one of them can run against it at a time. Stop <code>process --watch</code> (Control-C) before
+        running <code>review</code> or <code>retry</code>. <code>status</code> only reads, so it is always safe.</p>
+    </section>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">5. The staging folder</h2>
+      <pre>Staging/
+  2026-09-13-224203/        a scanner batch
+    page-001.png …
+    batch.json              written last; marks it ready
+    .scancore/              saved steps, so it can resume
+  drop-2026-09-14-013006/   a dropped file, adopted after 5 s
+  _done/                    batches with every document filed</pre>
+      <p>Drop <code>.pdf .png .jpg .jpeg .heic .tiff</code> files at the staging root to process existing scans. Folders starting with
+        <code>.</code> and <code>_done</code> are ignored.</p>
+    </section>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">6. What lands in the vault</h2>
+      <ul class="list-disc pl-6 space-y-1">
+        <li><strong>PDF:</strong> the scanned pages with an invisible, searchable text layer.</li>
+        <li><strong>Note:</strong> <code>YYYY-MM-DD From - Title.md</code> with properties, a summary, handwritten notes, key facts, related notes,
+          and the extracted text. Account, card, and Social Security numbers are reduced to their last four digits.</li>
+        <li><strong>Ledger:</strong> for batches with a purpose, a ledger note such as <code>2026 Business Receipts.md</code> in the purpose's
+          folder, with one row per document and a total.</li>
+      </ul>
+      <p>A document goes to <strong>Needs review</strong> instead when a split or folder is uncertain, it would create a new top-level folder,
+        it doesn't fit the purpose, an amount is missing, it looks like a duplicate, the ledger needs attention, Claude declined or answered
+        invalidly, or the chosen folder no longer exists. <code>status</code> shows the reasons.</p>
+    </section>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">7. Where state is kept</h2>
+      <p><code>~/Library/Application Support/AutoScannerOrganizer/</code> holds <code>events.jsonl</code> (the append-only history of every
+        batch, including tokens and estimated cost per Claude request) and <code>purposes.json</code> (remembered purpose folders and recent
+        purposes). It also holds <code>scan-organizer.lock</code>, which <code>process</code>, <code>review</code>, and <code>retry</code>
+        hold while they run so only one pipeline command uses the folder at a time; <code>status</code> doesn't need it. Change the folder
+        with <code>--data</code>.</p>
+    </section>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">8. Manual steps</h2>
+      <ol class="list-decimal pl-6 space-y-1">
+        <li>Create the API key and export <code>ANTHROPIC_API_KEY</code>.</li>
+        <li>Choose a staging folder and make sure your vault folder is downloaded locally (in Finder, choose Download Now on iCloud folders).</li>
+      </ol>
+    </section>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">9. Troubleshooting</h2>
+      <table class="w-full text-sm">
+        <tbody>
+          <tr><td><code>error: Set ANTHROPIC_API_KEY…</code></td><td>Export the key in the shell that runs the command.</td></tr>
+          <tr><td><code>error: another scan-organizer command is using …</code></td><td>Another <code>process</code>, <code>review</code>, or
+            <code>retry</code> is using the same data directory. Stop it (Control-C in its terminal), then run your command again.</td></tr>
+          <tr><td><code>failed at … http(status: 401 …)</code></td><td>The key is wrong or revoked; create a new one, then run <code>retry</code>.</td></tr>
+          <tr><td><code>failed at … 429</code> or <code>529</code></td><td>Rate limits and overloads are retried three times automatically; run
+            <code>retry</code> later.</td></tr>
+          <tr><td><code>Claude declined (…)</code></td><td>Resolve the document with <code>review</code>.</td></tr>
+          <tr><td><code>the ledger rejected the row: …</code></td><td>Repair the ledger note (for example, a mixed currency), then run
+            <code>review</code> with any existing <code>--folder</code>. The document's PDF and note are already filed, so folder and amount
+            corrections don't apply; only the ledger row is retried.</td></tr>
+          <tr><td>Vault write failures</td><td>iCloud placeholders or permissions: download the folder, check access, then <code>retry</code>.
+            No partial files are left behind.</td></tr>
+          <tr><td><code>batch.json is unreadable</code></td><td>The scanner stopped mid-write; fix or remove that batch folder.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="glass p-6 space-y-3">
+      <h2 class="text-2xl font-semibold">10. Live tests</h2>
+      <p><code>make test-live</code> sends a synthetic four-page stack and one placement to Claude (a few cents per run). It needs
+        <code>ANTHROPIC_API_KEY</code>; ordinary <code>make test</code> never touches the network.</p>
+    </section>
+  </main>
+</body>
+</html>

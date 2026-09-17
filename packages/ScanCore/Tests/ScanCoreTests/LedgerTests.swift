@@ -159,6 +159,12 @@ struct LedgerTests {
         #expect(try LedgerDocument.parse(updated).rows == [staples, delta])
     }
 
+    @Test func rejectsDuplicateRowsForTheSameDocument() {
+        let row = "| 2026-09-02 | Staples | 84.17 USD | office-supplies | [[2026-09-02 Staples - Receipt]] |"
+        let markdown = "\(LedgerDocument.startMarker)\n\(row)\n\(row)\n\(LedgerDocument.endMarker)\n"
+        #expect(throws: LedgerError.duplicateRow("2026-09-02 Staples - Receipt")) { try LedgerDocument.parse(markdown) }
+    }
+
     @Test func foldsLineBreaksInRenderedCells() throws {
         var ledger = LedgerDocument.new(title: "2026\nReceipts", purpose: "p", taxYear: nil)
         var row = staples

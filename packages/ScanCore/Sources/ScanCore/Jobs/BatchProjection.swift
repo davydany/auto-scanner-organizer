@@ -50,22 +50,25 @@ public enum BatchProjection {
                 let allIDs = (event.payload[JobPayloadKey.documentIDs] ?? "").split(separator: ",").map(String.init)
                 var seen: Set<String> = []
                 documentIDs = allIDs.filter { seen.insert($0).inserted }
-                documents = Dictionary(uniqueKeysWithValues: documentIDs.map { ($0, DocumentStatus.pending) })
+                // A re-read keeps the status of documents that are still listed (e.g. after a retry).
+                documents = Dictionary(uniqueKeysWithValues: documentIDs.map { ($0, documents[$0] ?? DocumentStatus.pending) })
                 nextStep = .placeDocuments
             case .needsReview:
-                if let id = event.documentID { documents[id] = .needsReview }
+                if let id = event.documentID, documents[id] != nil { documents[id] = .needsReview }
             case .reviewResolved:
-                if let id = event.documentID { documents[id] = .pending }
+                if let id = event.documentID, documents[id] != nil { documents[id] = .pending }
             case .noteWritten:
-                if let id = event.documentID, event.payload[JobPayloadKey.ledger] != "pending" { documents[id] = .filed }
+                if let id = event.documentID, documents[id] != nil, event.payload[JobPayloadKey.ledger] != "pending" {
+                    documents[id] = .filed
+                }
             case .ledgerUpdated:
-                if let id = event.documentID { documents[id] = .filed }
+                if let id = event.documentID, documents[id] != nil { documents[id] = .filed }
             case .rawArchived:
                 nextStep = .done
             case .stepFailed:
                 let step = BatchStep(rawValue: event.payload[JobPayloadKey.step] ?? "") ?? nextStep
                 failure = (step, event.payload[JobPayloadKey.message] ?? "Unknown error")
-                if let id = event.documentID { documents[id] = .failed }
+                if let id = event.documentID, documents[id] != nil { documents[id] = .failed }
             case .retryRequested:
                 failure = nil
                 for (id, status) in documents where status == .failed {
